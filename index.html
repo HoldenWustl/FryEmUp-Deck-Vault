@@ -33,7 +33,19 @@
 
     <section id="statsView" class="hidden">
         <div class="stats-container">
+    <div class="stats-header">
     <h2>Vault Analytics</h2>
+    
+    <div class="filter-group">
+        <label for="deckLimitFilter">Timeframe:</label>
+        <select id="deckLimitFilter">
+            <option value="all">All-Time</option>
+            <option value="500">Latest 500 Decks</option>
+            <option value="200">Latest 200 Decks</option>
+            <option value="50">Latest 50 Decks</option>
+        </select>
+    </div>
+</div>
     
     <div class="summary-cards">
         <div class="stat-card">
@@ -105,6 +117,18 @@
         <canvas id="averageDeckChart"></canvas>
     </div>
 </div>
+<div class="chart-box full-width">
+    <h3>Hot & Cold: Trending Cards</h3>
+    <p class="chart-subtitle">
+        Comparing usage in the last 50 decks vs. all-time average.
+    </p>
+    <div class="canvas-wrapper">
+        <canvas id="trendingCardsChart"></canvas>
+<div id="trendingEmptyMsg" style="display: none; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-secondary); font-style: italic; padding: 20px;">
+    Not enough historical data to calculate trends for this timeframe.
+</div>
+    </div>
+</div>
 
         <div class="chart-box">
             <h3>Class Dominance</h3>
@@ -126,29 +150,27 @@
     <h3>The "Pay-to-Win" Extremes</h3>
     <p class="chart-subtitle">Most and least expensive decks calculated by total Spark cost. Click to watch!</p>
     
-    <div style="display: flex; justify-content: space-around; align-items: center; padding: 20px 0; color: #c9d1d9;">
-        
-        <div style="max-width: 45%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-            <h4 style="color: #ff7b72; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">Ultimate Whale Deck</h4>
-            <a id="mostP2wLink" href="#" target="_blank" style="text-decoration: none;">
-                <img id="mostP2wImg" src="" alt="Whale Deck Thumbnail" style="width: 100%; max-width: 320px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #ff7b72; box-shadow: 0 4px 12px rgba(255, 123, 114, 0.2);">
-                <p id="mostP2wDeck" style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ffffff; text-shadow: 1px 1px 2px #000;">-</p>
-            </a>
-            <p id="mostP2wCost" style="font-size: 1.1rem; color: #d2a8ff; margin: 5px 0 0 0;">- Sparks</p>
-        </div>
-        
-        <div style="width: 2px; height: 100px; background-color: #30363d;"></div>
-
-        <div style="max-width: 45%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-            <h4 style="color: #3fb950; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">F2P Champion Deck</h4>
-            <a id="leastP2wLink" href="#" target="_blank" style="text-decoration: none;">
-                <img id="leastP2wImg" src="" alt="F2P Deck Thumbnail" style="width: 100%; max-width: 320px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #3fb950; box-shadow: 0 4px 12px rgba(63, 185, 80, 0.2);">
-                <p id="leastP2wDeck" style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ffffff; text-shadow: 1px 1px 2px #000;">-</p>
-            </a>
-            <p id="leastP2wCost" style="font-size: 1.1rem; color: #a5d6ff; margin: 5px 0 0 0;">- Sparks</p>
-        </div>
-
+    <div class="p2w-container">
+    <div class="p2w-card" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="color: #ff7b72; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">Ultimate Whale Deck</h4>
+        <a id="mostP2wLink" href="#" target="_blank" style="text-decoration: none;">
+            <img id="mostP2wImg" src="" alt="Whale Deck Thumbnail" style="width: 100%; border-radius: 8px; margin-bottom: 10px; border: 2px solid #ff7b72; box-shadow: 0 4px 12px rgba(255, 123, 114, 0.2);">
+            <p id="mostP2wDeck" style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ffffff; text-shadow: 1px 1px 2px #000;">-</p>
+        </a>
+        <p id="mostP2wCost" style="font-size: 1.1rem; color: #d2a8ff; margin: 5px 0 0 0;">- Sparks</p>
     </div>
+    
+    <div class="p2w-divider"></div>
+
+    <div class="p2w-card" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="color: #3fb950; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">F2P Champion Deck</h4>
+        <a id="leastP2wLink" href="#" target="_blank" style="text-decoration: none;">
+            <img id="leastP2wImg" src="" alt="F2P Deck Thumbnail" style="width: 100%; border-radius: 8px; margin-bottom: 10px; border: 2px solid #3fb950; box-shadow: 0 4px 12px rgba(63, 185, 80, 0.2);">
+            <p id="leastP2wDeck" style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ffffff; text-shadow: 1px 1px 2px #000;">-</p>
+        </a>
+        <p id="leastP2wCost" style="font-size: 1.1rem; color: #a5d6ff; margin: 5px 0 0 0;">- Sparks</p>
+    </div>
+</div>
 </div>
   
     </div>
@@ -158,25 +180,30 @@
 
     <div id="infoModal" class="modal">
     <div class="modal-content">
-        <span class="close-btn" id="closeModal">&times;</span>
-        <h2>How was this made? 🤓</h2>
-        <p>This entire database wasn't typed by hand! The deck lists were extracted automatically using computer vision (OpenCV) and Optical Character Recognition (Tesseract OCR) written in Python.</p>
-        <ul>
-            <li><strong>The Cards:</strong> Scraped directly from YouTube video screenshots by isolating the card slots and reading the counts.</li>
-            <li><strong>The Names:</strong> Grabbed by applying color-masking and padding to the deck title banners so the OCR wouldn't hallucinate.</li>
-            <li><strong>The Videos:</strong> Matched directly to FryEmUp's YouTube channels using script automation to pull the exact links and titles.</li>
-            <li><strong>The Card Data:</strong> To make all the beautiful stats work, the base game data was sourced from the <a href="https://github.com/dannyguy253/PvZHeroes-Database" target="_blank" style="color: #58a6ff; text-decoration: none;">dannyguy253/PvZHeroes-Database</a> repository and modified into a clean JSON format.</li>
-        </ul>
-        <p>Everything was then compiled and saved cleanly into JSON files! You can download the raw data for yourself below.</p>
+        <div class="modal-header">
+            <h2>How was this made? 🤓</h2>
+            <span class="close-btn" id="closeModal">&times;</span>
+        </div>
         
-        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
-            <a href="deck_database_final.json" download="fryemup_deck_database.json" class="download-btn" style="flex: 1; text-align: center;">
-                📥 Download Decks <span class="file-size">(~590 KB)</span>
-            </a>
+        <div class="modal-body">
+            <p>This entire database wasn't typed by hand! The deck lists were extracted automatically using computer vision (OpenCV) and Optical Character Recognition (Tesseract OCR) written in Python.</p>
+            <ul>
+                <li><strong>The Cards:</strong> Scraped directly from YouTube video screenshots by isolating the card slots and reading the counts.</li>
+                <li><strong>The Names:</strong> Grabbed by applying color-masking and padding to the deck title banners so the OCR wouldn't hallucinate.</li>
+                <li><strong>The Videos:</strong> Matched directly to FryEmUp's YouTube channels using script automation to pull the exact links and titles.</li>
+                <li><strong>The Card Data:</strong> To make all the beautiful stats work, the base game data was sourced from the <a href="https://github.com/dannyguy253/PvZHeroes-Database" target="_blank" style="color: #58a6ff; text-decoration: none;">dannyguy253/PvZHeroes-Database</a> repository and modified into a clean JSON format.</li>
+            </ul>
+            <p>Everything was then compiled and saved cleanly into JSON files! You can download the raw data for yourself below.</p>
             
-            <a href="card_data.json" download="pvzh_card_data.json" class="download-btn" style="flex: 1; text-align: center; background-color: #238636;">
-                📊 Download Card Data <span class="file-size">(~170 KB)</span>
-            </a>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
+                <a href="deck_database_final.json" download="fryemup_deck_database.json" class="download-btn" style="flex: 1; text-align: center; min-width: 200px;">
+                    📥 Download Decks <span class="file-size">(~590 KB)</span>
+                </a>
+                
+                <a href="card_data.json" download="pvzh_card_data.json" class="download-btn" style="flex: 1; text-align: center; background-color: #238636; min-width: 200px;">
+                    📊 Download Card Data <span class="file-size">(~170 KB)</span>
+                </a>
+            </div>
         </div>
     </div>
 </div>
