@@ -542,7 +542,7 @@
     "Cornucopia": {
         "Name": "Cornucopia",
         "Class": "Solar",
-        "Cost": 10,
+        "Cost": 9,
         "Strength": 6.0,
         "Health": 6.0,
         "Description": "When played: Make a random Plant in each other lane.",
@@ -698,7 +698,7 @@
     "Espresso_Fiesta": {
         "Name": "Espresso_Fiesta",
         "Class": "Mega-Grow",
-        "Cost": 8,
+        "Cost": 7,
         "Strength": null,
         "Health": null,
         "Description": "A Plant does three Bonus Attacks.",
@@ -2498,7 +2498,7 @@
     "Sun_Shroom": {
         "Name": "Sun_Shroom",
         "Class": "Solar",
-        "Cost": 2,
+        "Cost": 1,
         "Strength": 0.0,
         "Health": 2.0,
         "Description": "Team-Up, Start of turn: You get +1 Sun this turn and this transforms into a Sunnier-Shroom",
