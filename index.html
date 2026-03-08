@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FryEmUp Deck Database</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+    <div class="header-content">
+        <h1>FryEmUp Deck Vault</h1>
+        <p>Browsing <span id="deckCount" class="highlight">...</span> glorious PvZH decks! <button id="infoBtn" class="info-btn">?</button></p>
+        <p class="last-updated">Last updated: Mar 7, 2026</p>
+        
+        <div id="controls" class="controls-container">
+            <div id="searchWrapper">
+                <input type="text" id="searchInput" placeholder="Search decks, cards, or videos...">
+            </div>
+            <button id="statsBtn">View Stats</button>
+            <button id="backBtn" class="hidden">⬅ Back to Decks</button>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div id="loading" class="loading">Loading database...</div>
+    
+    <section id="deckView">
+        <div id="deckGrid" class="deck-grid"></div>
+    </section>
+
+    <section id="statsView" class="hidden">
+        <div class="stats-container">
+    <h2>Vault Analytics</h2>
+    
+    <div class="summary-cards">
+        <div class="stat-card">
+            <h3>Total Decks</h3>
+            <p id="statTotalDecks">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Unique Cards Found</h3>
+            <p id="statUniqueCards">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Avg. Distinct Cards / Deck</h3>
+            <p id="statAvgVariety">0</p>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-box full-width">
+            <h3>Most Used Cards (Total Copies)</h3>
+            <div class="canvas-wrapper">
+                <canvas id="topCardsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Most Frequently Included Cards</h3>
+            <p class="chart-subtitle">Cards that appear in the highest number of unique decks.</p>
+            <div class="canvas-wrapper">
+                <canvas id="deckPresenceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Decks Uploaded Over Time</h3>
+            <p class="chart-subtitle">Based on YouTube upload dates.</p>
+            <div class="canvas-wrapper">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Ultimate Synergies</h3>
+            <p class="chart-subtitle">Cards most frequently played together in the same deck.</p>
+            <div class="canvas-wrapper">
+                <canvas id="pairsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Fry's Favorite Buzzwords</h3>
+            <p class="chart-subtitle">Most common words used in YouTube video titles.</p>
+            <div class="canvas-wrapper">
+                <canvas id="buzzwordChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Overall Mana Curve</h3>
+            <p class="chart-subtitle">Distribution of card costs across all decks.</p>
+            <div class="canvas-wrapper">
+                <canvas id="costCurveChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+    <h3>Fry's Average Deck Formula</h3>
+    <p class="chart-subtitle">How a typical 40-card deck is split by cost.</p>
+    <div class="canvas-wrapper">
+        <canvas id="averageDeckChart"></canvas>
+    </div>
+</div>
+
+        <div class="chart-box">
+            <h3>Class Dominance</h3>
+            <p class="chart-subtitle">Most played classes based on total copies.</p>
+            <div class="canvas-wrapper">
+                <canvas id="classRadarChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Deck Expense (Rarity)</h3>
+            <p class="chart-subtitle">Breakdown of card rarities used.</p>
+            <div class="canvas-wrapper">
+                <canvas id="rarityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box" style="grid-column: 1 / -1; text-align: center;">
+    <h3>The "Pay-to-Win" Extremes</h3>
+    <p class="chart-subtitle">Most and least expensive decks calculated by total Spark cost. Click to watch!</p>
+    
+    <div style="display: flex; justify-content: space-around; align-items: center; padding: 20px 0; color: #c9d1d9;">
+        
+        <div style="max-width: 45%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <h4 style="color: #ff7b72; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">Ultimate Whale Deck</h4>
+            <a id="mostP2wLink" href="#" target="_blank" style="text-decoration: none;">
+                <img id="mostP2wImg" src="" alt="Whale Deck Thumbnail" style="width: 100%; max-width: 320px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #ff7b72; box-shadow: 0 4px 12px rgba(255, 123, 114, 0.2);">
+                <p id="mostP2wDeck" style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ffffff; text-shadow: 1px 1px 2px #000;">-</p>
+            </a>
+            <p id="mostP2wCost" style="font-size: 1.1rem; color: #d2a8ff; margin: 5px 0 0 0;">- Sparks</p>
+        </div>
+        
+        <div style="width: 2px; height: 100px; background-color: #30363d;"></div>
+
+        <div style="max-width: 45%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <h4 style="color: #3fb950; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;">F2P Champion Deck</h4>
+            <a id="leastP2wLink" href="#" target="_blank" style="text-decoration: none;">
+                <img id="leastP2wImg" src="" alt="F2P Deck Thumbnail" style="width: 100%; max-width: 320px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #3fb950; box-shadow: 0 4px 12px rgba(63, 185, 80, 0.2);">
+                <p id="leastP2wDeck" style="font-size: 1.2rem; font-weight: bold; margin: 0; color: #ffffff; text-shadow: 1px 1px 2px #000;">-</p>
+            </a>
+            <p id="leastP2wCost" style="font-size: 1.1rem; color: #a5d6ff; margin: 5px 0 0 0;">- Sparks</p>
+        </div>
+
+    </div>
+</div>
+  
+    </div>
+</div>
+    </section>
+</main>
+
+    <div id="infoModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" id="closeModal">&times;</span>
+        <h2>How was this made? 🤓</h2>
+        <p>This entire database wasn't typed by hand! The deck lists were extracted automatically using computer vision (OpenCV) and Optical Character Recognition (Tesseract OCR) written in Python.</p>
+        <ul>
+            <li><strong>The Cards:</strong> Scraped directly from YouTube video screenshots by isolating the card slots and reading the counts.</li>
+            <li><strong>The Names:</strong> Grabbed by applying color-masking and padding to the deck title banners so the OCR wouldn't hallucinate.</li>
+            <li><strong>The Videos:</strong> Matched directly to FryEmUp's YouTube channels using script automation to pull the exact links and titles.</li>
+            <li><strong>The Card Data:</strong> To make all the beautiful stats work, the base game data was sourced from the <a href="https://github.com/dannyguy253/PvZHeroes-Database" target="_blank" style="color: #58a6ff; text-decoration: none;">dannyguy253/PvZHeroes-Database</a> repository and modified into a clean JSON format.</li>
+        </ul>
+        <p>Everything was then compiled and saved cleanly into JSON files! You can download the raw data for yourself below.</p>
+        
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
+            <a href="deck_database_final.json" download="fryemup_deck_database.json" class="download-btn" style="flex: 1; text-align: center;">
+                📥 Download Decks <span class="file-size">(~590 KB)</span>
+            </a>
+            
+            <a href="card_data.json" download="pvzh_card_data.json" class="download-btn" style="flex: 1; text-align: center; background-color: #238636;">
+                📊 Download Card Data <span class="file-size">(~170 KB)</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+    <div id="statsModal" class="modal">
+        <div class="modal-content stats-content">
+            <span class="close-btn" id="closeStatsModal">&times;</span>
+            <h2>FryEmUp All-Time Stats 📈</h2>
+            <p>The most played cards across all 945 decks.</p>
+            
+            <div class="chart-container">
+                <canvas id="topCardsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
