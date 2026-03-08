@@ -154,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Tab Switching Logic (Decks <-> Stats) ---
+    // --- Tab Switching Logic (Decks <-> Stats) ---
     statsBtn.addEventListener('click', () => {
         deckView.classList.add('hidden');
         searchWrapper.classList.add('hidden');
@@ -162,8 +163,18 @@ document.addEventListener('DOMContentLoaded', () => {
         statsView.classList.remove('hidden');
         backBtn.classList.remove('hidden');
         
-        renderStatsChart();
+        // NEW: Read the dropdown value when opening stats
+        const currentLimit = document.getElementById('deckLimitFilter') ? document.getElementById('deckLimitFilter').value : 'all';
+        renderStatsChart(currentLimit);
     });
+
+    // NEW: Listen for when the user changes the dropdown
+    const filterDropdown = document.getElementById('deckLimitFilter');
+    if (filterDropdown) {
+        filterDropdown.addEventListener('change', (e) => {
+            renderStatsChart(e.target.value);
+        });
+    }
 
     backBtn.addEventListener('click', () => {
         statsView.classList.add('hidden');
@@ -175,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Stats Rendering Logic ---
-    function renderStatsChart() {
+    function renderStatsChart(limit = 'all') {
     // Existing Data Accumulators
     const cardCopies = {};      
     const deckPresence = {};    
@@ -194,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NEW: Pay-to-Win Tracking Variables ---
     let maxSparkCost = -1;
     let minSparkCost = Infinity;
-    let mostExpensiveDeck = null; // Store the object, not just the string
+    let mostExpensiveDeck = null; 
     let leastExpensiveDeck = null;
     
     // --- NEW: Average Deck Formula Trackers ---
@@ -204,14 +215,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let validDeckCountForCurve = 0;
 
     let totalUniqueCardSlots = 0;
-    const allDecks = Object.values(fullDatabase);
+     
+    // --- NEW: Trending Data Variables ---
+    const RECENT_DECK_COUNT = 50; 
+    const recentCardFreq = {};
+
+    // --- FIX: Safely sort allDecks from newest to oldest ---
+    // --- FIX: Safely sort allDecks from newest to oldest ---
+    let allDecks = Object.values(fullDatabase).sort((a, b) => {
+        const dateA = a.upload_date && a.upload_date !== "UNKNOWN_DATE" ? new Date(a.upload_date).getTime() : 0;
+        const dateB = b.upload_date && b.upload_date !== "UNKNOWN_DATE" ? new Date(b.upload_date).getTime() : 0;
+        return dateB - dateA; 
+    });
+
+    // --- NEW: Apply the timeframe filter! ---
+    if (limit !== 'all') {
+        const sliceAmount = parseInt(limit, 10);
+        // Since newest are at the front (index 0), we grab from 0 up to the sliceAmount
+        allDecks = allDecks.slice(0, sliceAmount);
+    }
+
     const totalDecks = allDecks.length;
 
     // Process the database
-    allDecks.forEach(deck => {
+    allDecks.forEach((deck, index) => {
         let uniqueInThisDeck = 0;
         const deckCardNames = []; 
-        let currentDeckSparkCost = 0; // <-- Track sparks per deck
+        let currentDeckSparkCost = 0;
 
         // 1. Process Timeline
         if (deck.upload_date && deck.upload_date !== "UNKNOWN_DATE") {
@@ -246,11 +276,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 deckCardNames.push(name);
                 uniqueInThisDeck++;
                 
+                // If this deck is one of the 50 newest, tally it for the recent pool
+                if (index < RECENT_DECK_COUNT) {
+                    recentCardFreq[name] = (recentCardFreq[name] || 0) + count;
+                }
+
                 // Process Extended Card Data
                 if (typeof cardDatabase !== 'undefined' && cardDatabase[rawName]) {
                     const info = cardDatabase[rawName];
                     
-                    // --- NEW: Calculate Sparks ---
+                    // Calculate Sparks
                     if (info.Rarity) {
                         const rarity = info.Rarity.toLowerCase();
                         let sparkCost = 0;
@@ -265,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (info.Cost !== null && info.Cost !== undefined) {
                         costCurve[info.Cost] = (costCurve[info.Cost] || 0) + count;
-
                         if (info.Cost <= 2) earlyGameTotal += count;
                         else if (info.Cost <= 5) midGameTotal += count;
                         else lateGameTotal += count;
@@ -274,7 +308,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         classCounts[info.Class] = (classCounts[info.Class] || 0) + count;
                     }
                     
-                    // Simplify the "Type" to 3 categories
                     if (info.Type) {
                         let broadType = "Fighter / Minion";
                         if (info.Type.includes("Trick")) broadType = "Trick";
@@ -282,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         typeCounts[broadType] = (typeCounts[broadType] || 0) + count;
                     }
 
-                    // Average Stats by Cost (Only log cards with actual Str/Hp stats)
                     if (info.Strength !== null && info.Health !== null) {
                         if (!statsByCost[info.Cost]) {
                             statsByCost[info.Cost] = { str: [], hp: [] };
@@ -297,9 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         totalUniqueCardSlots += uniqueInThisDeck;
 
-        // --- NEW: Check for P2W Extremes ---
-        // Only evaluate if the deck has a valid cost > 0 to avoid broken/empty decks being labeled F2P
-       if (currentDeckSparkCost > 0) {
+        if (currentDeckSparkCost > 0) {
             if (currentDeckSparkCost > maxSparkCost) {
                 maxSparkCost = currentDeckSparkCost;
                 mostExpensiveDeck = deck; 
@@ -327,23 +357,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('statUniqueCards').innerText = Object.keys(cardCopies).length;
     document.getElementById('statAvgVariety').innerText = totalDecks ? (totalUniqueCardSlots / totalDecks).toFixed(1) : 0;
 
-    // Helper function to extract the 11-character YouTube video ID
     function getYouTubeId(url) {
         if (!url) return null;
         const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         return match ? match[1] : null;
     }
 
-    // --- Update Pay-to-Win DOM ---
     if (document.getElementById('mostP2wDeck') && mostExpensiveDeck && leastExpensiveDeck) {
-        // Most Expensive
         const mostId = getYouTubeId(mostExpensiveDeck.youtube_url);
         document.getElementById('mostP2wDeck').innerText = mostExpensiveDeck.name || mostExpensiveDeck.youtube_title;
         document.getElementById('mostP2wCost').innerText = maxSparkCost.toLocaleString() + ' Sparks';
         if (mostId) document.getElementById('mostP2wImg').src = `https://img.youtube.com/vi/${mostId}/mqdefault.jpg`;
         document.getElementById('mostP2wLink').href = mostExpensiveDeck.youtube_url || "#";
 
-        // Least Expensive
         const leastId = getYouTubeId(leastExpensiveDeck.youtube_url);
         document.getElementById('leastP2wDeck').innerText = leastExpensiveDeck.name || leastExpensiveDeck.youtube_title;
         document.getElementById('leastP2wCost').innerText = minSparkCost.toLocaleString() + ' Sparks';
@@ -358,18 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const yearsSorted = Object.keys(uploadsByYear).sort();
     const topPairs = Object.entries(pairCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const topWords = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    
-    // Process the new Stat Curve data
     const costsSorted = Object.keys(costCurve).sort((a, b) => parseInt(a) - parseInt(b));
-    const avgStatsCosts = Object.keys(statsByCost).sort((a, b) => parseInt(a) - parseInt(b));
-    const avgStrData = avgStatsCosts.map(c => {
-        const arr = statsByCost[c].str;
-        return arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : 0;
-    });
-    const avgHpData = avgStatsCosts.map(c => {
-        const arr = statsByCost[c].hp;
-        return arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : 0;
-    });
 
     // Destroy existing charts
     Object.values(charts).forEach(chart => {
@@ -455,6 +470,79 @@ document.addEventListener('DOMContentLoaded', () => {
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false }, ticks: { color: textColor } }, y: { grid: { color: gridColor }, ticks: { color: textColor } } }, plugins: { legend: { display: false } } }
     });
 
+    // --- CHART 6.5: Hot & Cold Trending Cards ---
+    const trendingCanvas = document.getElementById('trendingCardsChart');
+    const trendingEmptyMsg = document.getElementById('trendingEmptyMsg');
+
+    if (trendingCanvas) {
+        // If we are looking at 50 or fewer decks, trends don't make mathematical sense
+        if (totalDecks <= RECENT_DECK_COUNT) {
+            trendingCanvas.style.display = 'none';
+            if (trendingEmptyMsg) {
+                // Remove the inline display:none and use flex to center it
+                trendingEmptyMsg.style.display = 'flex'; 
+            }
+        } else {
+            // We have enough data! Show the canvas, hide the message
+            trendingCanvas.style.display = 'block';
+            if (trendingEmptyMsg) {
+                trendingEmptyMsg.style.display = 'none';
+            }
+
+            const trendingScores = [];
+            // Use cardCopies instead of allTimeCardFreq since it holds the exact same data
+            Object.keys(cardCopies).forEach(card => {
+                const allTimeAvg = cardCopies[card] / totalDecks;
+                const recentAvg = (recentCardFreq[card] || 0) / RECENT_DECK_COUNT;
+                const delta = recentAvg - allTimeAvg; 
+
+                if (cardCopies[card] >= 10 || (recentCardFreq[card] || 0) >= 4) {
+                    trendingScores.push({ name: card, delta: delta });
+                }
+            });
+
+            trendingScores.sort((a, b) => b.delta - a.delta);
+
+            const hottest = trendingScores.slice(0, 5);
+            const coldest = trendingScores.slice(-5); 
+            const hotAndCold = [...hottest, ...coldest]; 
+
+            const ctx10 = trendingCanvas.getContext('2d');
+            charts.trending = new Chart(ctx10, {
+                type: 'bar',
+                data: {
+                    labels: hotAndCold.map(item => item.name),
+                    datasets: [{
+                        label: 'Usage Change',
+                        data: hotAndCold.map(item => item.delta.toFixed(2)),
+                        backgroundColor: hotAndCold.map(item => item.delta > 0 ? '#ff7b72' : '#58a6ff'),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    indexAxis: 'y', 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw;
+                                    return val > 0 ? `🔥 Trending Up: +${val} copies/deck` : `🧊 Trending Down: ${val} copies/deck`;
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        x: { grid: { color: gridColor }, ticks: { color: textColor } }, 
+                        y: { ticks: { color: '#c9d1d9', font: { weight: 'bold' } }, grid: { display: false } } 
+                    }
+                }
+            });
+        }
+    }
+
     // --- CHART 7: Class Dominance ---
     const ctx7 = document.getElementById('classRadarChart').getContext('2d');
     charts.classDominance = new Chart(ctx7, {
@@ -471,21 +559,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvasWidth = ctx8.canvas.clientWidth || 400; 
     const canvasHeight = ctx8.canvas.clientHeight || 400; 
 
-    // 1. Big Smooth Gradient (Strictly for the Chart Slice)
     const sliceGradient = ctx8.createLinearGradient(0, 0, canvasWidth, canvasHeight); 
-    sliceGradient.addColorStop(0, '#4b00c4');   // Deep Violet
-    sliceGradient.addColorStop(0.3, '#df00ff'); // Hot Magenta
-    sliceGradient.addColorStop(0.5, '#ff5900'); // Orange
-    sliceGradient.addColorStop(0.75, '#ffcc00'); // Gold
-    sliceGradient.addColorStop(1, '#bfff00');   // Lime Green
+    sliceGradient.addColorStop(0, '#4b00c4');  
+    sliceGradient.addColorStop(0.3, '#df00ff');
+    sliceGradient.addColorStop(0.5, '#ff5900'); 
+    sliceGradient.addColorStop(0.75, '#ffcc00');
+    sliceGradient.addColorStop(1, '#bfff00');  
 
-    // 2. Horizontal Stripe Pattern (Strictly for the Legend Key)
     const patternCanvas = document.createElement('canvas');
-    patternCanvas.width = 40;  // Matches typical legend box width
-    patternCanvas.height = 15; // Matches typical legend box height
+    patternCanvas.width = 40;  
+    patternCanvas.height = 15; 
     const pCtx = patternCanvas.getContext('2d');
     
-    // Make this gradient perfectly horizontal (0 to 40)
     const pGradient = pCtx.createLinearGradient(0, 0, 40, 0); 
     pGradient.addColorStop(0, '#4b00c4');    
     pGradient.addColorStop(0.3, '#df00ff'); 
@@ -496,7 +581,6 @@ document.addEventListener('DOMContentLoaded', () => {
     pCtx.fillRect(0, 0, 40, 15);
     const legendPattern = ctx8.createPattern(patternCanvas, 'repeat');
 
-    // 3. Define a helper to rank the rarities in order
     const getRarityWeight = (r) => {
         const lower = r.toLowerCase();
         if (lower.includes('common') && !lower.includes('uncommon')) return 1;
@@ -508,10 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return 99; 
     };
 
-    // 4. Sort the labels using the weights
     const sortedRarityLabels = Object.keys(rarityCounts).sort((a, b) => getRarityWeight(a) - getRarityWeight(b));
-    
-    // 5. Map the data and colors
     const sortedRarityData = sortedRarityLabels.map(label => rarityCounts[label]);
     const sortedRarityColors = sortedRarityLabels.map(r => {
         const lower = r.toLowerCase();
@@ -519,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lower.includes('common')) return '#f8fafd';   
         if (lower.includes('super')) return '#6B21A8'; 
         if (lower.includes('rare')) return '#d29922'; 
-        if (lower.includes('legendary')) return sliceGradient; // Big smooth gradient
+        if (lower.includes('legendary')) return sliceGradient; 
         if (lower.includes('event')) return '#FF4500'; 
         return '#ffffff';
     });
@@ -549,15 +630,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return data.labels.map((label, i) => {
                                     const meta = chart.getDatasetMeta(0);
                                     let fill = data.datasets[0].backgroundColor[i];
-                                    
                                     if (label.toLowerCase().includes('legendary')) fill = legendPattern;
-
                                     return {
                                         text: label,
                                         fillStyle: fill,
                                         strokeStyle: data.datasets[0].borderColor,
                                         lineWidth: data.datasets[0].borderWidth,
-                                        fontColor: '#c9d1d9', // <-- THIS RESTORES YOUR DARK THEME TEXT
+                                        fontColor: '#c9d1d9',
                                         hidden: isNaN(data.datasets[0].data[i]) || meta.data[i].hidden,
                                         index: i
                                     };
@@ -568,17 +647,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     } 
                 } 
             },
-            scales: {
-                r: {
-                    ticks: { display: false }, 
-                    grid: { color: '#30363d' } 
-                }
-            }
+            scales: { r: { ticks: { display: false }, grid: { color: '#30363d' } } }
         }
     });
 
     // --- CHART 9: Average Deck Formula ---
-    // Calculate the averages and round to 1 decimal place
     const avgEarly = validDeckCountForCurve ? (earlyGameTotal / validDeckCountForCurve).toFixed(1) : 0;
     const avgMid = validDeckCountForCurve ? (midGameTotal / validDeckCountForCurve).toFixed(1) : 0;
     const avgLate = validDeckCountForCurve ? (lateGameTotal / validDeckCountForCurve).toFixed(1) : 0;
@@ -590,28 +663,15 @@ document.addEventListener('DOMContentLoaded', () => {
             labels: ['Early Game (0-2)', 'Mid Game (3-5)', 'Late Game (6+)'],
             datasets: [{
                 data: [avgEarly, avgMid, avgLate],
-                backgroundColor: [
-                    '#3fb950', // Green for Early (Safe/Swarm)
-                    '#d29922', // Gold for Mid (Tempo/Beefy)
-                    '#f85149'  // Red for Late (Danger/Finishers)
-                ],
-                borderColor: '#161b22',
-                borderWidth: 2,
-                hoverOffset: 4
+                backgroundColor: ['#3fb950', '#d29922', '#f85149'],
+                borderColor: '#161b22', borderWidth: 2, hoverOffset: 4
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom', labels: { color: '#c9d1d9' } },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return ` ${context.raw} cards per deck`;
-                        }
-                    }
-                }
+                tooltip: { callbacks: { label: function(context) { return ` ${context.raw} cards per deck`; } } }
             }
         }
     });
