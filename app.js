@@ -63,38 +63,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchWrapper = document.getElementById('searchWrapper');
     const statsBtn = document.getElementById('statsBtn');
     const backBtn = document.getElementById('backBtn');
+    const crafterBtn = document.getElementById('crafterBtn');
+    const crafterView = document.getElementById('crafterView');
 
     // --- Fetch Database ---
-    fetch('deck_database_final.json')
-        .then(response => {
-            if (!response.ok) throw new Error("Could not load the database file.");
-            return response.json();
-        })
-        .then(data => {
-            fullDatabase = data; // Save to our global variable
-            loadingEl.style.display = 'none';
+   // --- 1. SET UP A "DATA LOADED" FLAG ---
+let isDataLoaded = false; 
 
-            const totalDecks = Object.keys(data).length;
-            deckCountEl.textContent = totalDecks;
+// --- 2. YOUR FETCH CALLS (Slightly updated) ---
+// We use Promise.all to wait for BOTH JSON files to finish downloading
+Promise.all([
+    fetch('deck_database_final.json').then(res => {
+        if (!res.ok) throw new Error("Could not load the database file.");
+        return res.json();
+    }),
+    fetch('card_data.json').then(res => {
+        if (!res.ok) throw new Error("Could not load the card data file.");
+        return res.json();
+    })
+])
+.then(([deckData, cardData]) => {
+    // Both files are successfully downloaded!
+    fullDatabase = deckData;
+    cardDatabase = cardData;
 
-            renderDecks(fullDatabase);
-        })
-        .catch(error => {
-            loadingEl.textContent = `Error loading data: ${error.message}`;
-            console.error("Fetch error:", error);
-        });
-    fetch('card_data.json')
-        .then(response => {
-            if (!response.ok) throw new Error("Could not load the card data file.");
-            return response.json();
-        })
-        .then(data => {
-            cardDatabase = data; // Save to our global variable
-        })
-        .catch(error => {
-            console.error("Fetch error:", error);
-        });
+    loadingEl.style.display = 'none';
+    const totalDecks = Object.keys(deckData).length;
+    deckCountEl.textContent = totalDecks;
+    
+    // We set our flag to true, meaning it is safe to draw charts now.
+    isDataLoaded = true;
+    
+    // Kick off the initial render of the main deck list
+    renderDecks(fullDatabase);
 
+    // KICK OFF THE ROUTER NOW THAT WE HAVE DATA!
+    handleRouting(); 
+})
+.catch(error => {
+    loadingEl.textContent = `Error loading data: ${error.message}`;
+    console.error("Fetch error:", error);
+});
+function handleRouting() {
+    // IMPORTANT: If the data hasn't finished downloading yet, stop right here!
+    // The Promise.all block above will call handleRouting() again once it is ready.
+    if (!isDataLoaded) return; 
+
+    const hash = window.location.hash;
+
+    // Hide absolutely everything first
+    deckView.classList.add('hidden');
+    statsView.classList.add('hidden');
+    crafterView.classList.add('hidden');
+    searchWrapper.classList.add('hidden');
+    statsBtn.classList.add('hidden');
+    crafterBtn.classList.add('hidden');
+    if (typeof backBtn !== 'undefined') backBtn.classList.add('hidden');
+
+    if (hash === '#stats') {
+        statsView.classList.remove('hidden');
+        if (typeof backBtn !== 'undefined') backBtn.classList.remove('hidden');
+        
+        // It is now safe to render the chart because we know fullDatabase exists!
+        const currentLimit = document.getElementById('deckLimitFilter') ? document.getElementById('deckLimitFilter').value : 'all';
+        renderStatsChart(currentLimit);
+
+    } else if (hash === '#crafter') {
+        crafterView.classList.remove('hidden');
+        if (typeof backBtn !== 'undefined') backBtn.classList.remove('hidden');
+
+    } else {
+        deckView.classList.remove('hidden');
+        searchWrapper.classList.remove('hidden');
+        statsBtn.classList.remove('hidden');
+        crafterBtn.classList.remove('hidden');
+    }
+}
     // --- Helper Functions ---
     function getYouTubeId(url) {
         if (!url) return null;
@@ -116,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loadingIndicator) loadingIndicator.classList.remove('hidden');
     deckGrid.classList.add('hidden'); // Hide the grid while building
     if (statsBtn) statsBtn.disabled = true;
+    if (crafterBtn) crafterBtn.disabled = true;
 
     // Use a setTimeout so the browser has a split second to paint the loading 
     // spinner and disable the buttons before locking up to do the heavy rendering
@@ -177,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (loadingIndicator) loadingIndicator.classList.add('hidden');
         deckGrid.classList.remove('hidden');
         if (statsBtn) statsBtn.disabled = false;
+        if (crafterBtn) crafterBtn.disabled = false;
 
     }, 50); // 50ms delay allows the UI to show the loading state first
 }
@@ -217,19 +263,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Tab Switching Logic (Decks <-> Stats) ---
-    // --- Tab Switching Logic (Decks <-> Stats) ---
     statsBtn.addEventListener('click', () => {
-        deckView.classList.add('hidden');
-        searchWrapper.classList.add('hidden');
-        statsBtn.classList.add('hidden');
+    // Hide Main UI & Crafter Button
+    deckView.classList.add('hidden');
+    searchWrapper.classList.add('hidden');
+    statsBtn.classList.add('hidden');
+    crafterBtn.classList.add('hidden'); // Hide the new button
 
-        statsView.classList.remove('hidden');
-        backBtn.classList.remove('hidden');
+    // Show Stats UI
+    statsView.classList.remove('hidden');
+    backBtn.classList.remove('hidden');
 
-        // NEW: Read the dropdown value when opening stats
-        const currentLimit = document.getElementById('deckLimitFilter') ? document.getElementById('deckLimitFilter').value : 'all';
-        renderStatsChart(currentLimit);
-    });
+    // Read the dropdown value when opening stats
+    const currentLimit = document.getElementById('deckLimitFilter') ? document.getElementById('deckLimitFilter').value : 'all';
+    renderStatsChart(currentLimit);
+});
+crafterBtn.addEventListener('click', () => {
+    // Hide Main UI & Stats Button
+    deckView.classList.add('hidden');
+    searchWrapper.classList.add('hidden');
+    statsBtn.classList.add('hidden');
+    crafterBtn.classList.add('hidden'); 
+
+    // Show Crafter UI
+    crafterView.classList.remove('hidden');
+    backBtn.classList.remove('hidden');
+});
 
     // NEW: Listen for when the user changes the dropdown
     const filterDropdown = document.getElementById('deckLimitFilter');
@@ -239,14 +298,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    backBtn.addEventListener('click', () => {
-        statsView.classList.add('hidden');
-        backBtn.classList.add('hidden');
+   backBtn.addEventListener('click', () => {
+    // Hide BOTH secondary views and the back button
+    statsView.classList.add('hidden');
+    crafterView.classList.add('hidden'); // Hide the new view
+    backBtn.classList.add('hidden');
 
-        deckView.classList.remove('hidden');
-        searchWrapper.classList.remove('hidden');
-        statsBtn.classList.remove('hidden');
-    });
+    // Restore Main UI
+    deckView.classList.remove('hidden');
+    searchWrapper.classList.remove('hidden');
+    statsBtn.classList.remove('hidden');
+    crafterBtn.classList.remove('hidden'); // Restore the new button
+});
 
     // --- Stats Rendering Logic ---
     function renderStatsChart(limit = 'all') {
@@ -1156,4 +1219,479 @@ charts.classDominance = new Chart(ctx7, {
     }
 
 
+    // --- AI DECK BUILDER: SMART SEED MANAGEMENT ---
+// Map alphabetical class combos to their specific PvZ Heroes
+const heroMap = {
+    // Plants
+    "Mega-Grow,Smarty": "Green Shadow",
+    "Kabloom,Solar": "Solar Flare",
+    "Guardian,Solar": "Wall-Knight",
+    "Mega-Grow,Solar": "Chompzilla",
+    "Guardian,Kabloom": "Spudow",
+    "Guardian,Smarty": "Citron / Beta-Carrotina", // Both share these classes
+    "Guardian,Mega-Grow": "Grass Knuckles",
+    "Kabloom,Smarty": "Nightcap",
+    "Kabloom,Mega-Grow": "Captain Combustible",
+    "Smarty,Solar": "Rose",
+    
+    // Zombies
+    "Brainy,Sneaky": "Super Brainz / Huge-Gigantacus",
+    "Beastly,Hearty": "The Smash",
+    "Crazy,Sneaky": "Impfinity",
+    "Brainy,Hearty": "Rustbolt",
+    "Beastly,Crazy": "Electric Boogaloo",
+    "Beastly,Sneaky": "Brain Freeze",
+    "Brainy,Crazy": "Professor Brainstorm",
+    "Beastly,Brainy": "Immorticia",
+    "Crazy,Hearty": "Z-Mech",
+    "Hearty,Sneaky": "Neptuna"
+};
+const plantClasses = new Set(["Mega-Grow", "Kabloom", "Smarty", "Guardian", "Solar"]);
+let currentSeeds = []; 
+let currentFaction = null; 
+let activeClasses = new Set(); 
+
+const seedInput = document.getElementById('seedSearchInput');
+const suggestionsBox = document.getElementById('smartSuggestions');
+const seedList = document.getElementById('seedList');
+const emptySeedMsg = document.getElementById('emptySeedMsg');
+const generateDeckBtn = document.getElementById('generateDeckBtn');
+const clearSeedsBtn = document.getElementById('clearSeedsBtn'); // NEW: Grab the Clear button
+
+// Helper: Get total number of cards currently seeded
+const getTotalCards = () => currentSeeds.reduce((sum, seed) => sum + seed.count, 0);
+
+// 1. Smart Autocomplete (Filters as you type)
+seedInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    suggestionsBox.innerHTML = ''; 
+
+    // STRICT CHECK: Max 4 unique seed cards
+    if (currentSeeds.length >= 4) {
+        suggestionsBox.innerHTML = '<li style="color: #ff7b72; justify-content: center;">Maximum of 4 seed cards reached!</li>';
+        suggestionsBox.style.display = 'block';
+        return;
+    }
+
+    // STRICT CHECK: Max 40 cards total
+    if (getTotalCards() >= 40) {
+        suggestionsBox.innerHTML = '<li style="color: #ff7b72; justify-content: center;">Deck is full (40 cards)!</li>';
+        suggestionsBox.style.display = 'block';
+        return;
+    }
+
+    if (query.length < 2) {
+        suggestionsBox.style.display = 'none';
+        return;
+    }
+
+    let matches = 0;
+    Object.keys(cardDatabase).forEach(rawName => {
+        if (matches >= 15) return; 
+        
+        const cleanName = rawName.replace(/_/g, ' ');
+        if (cleanName.toLowerCase().includes(query)) {
+            const cardInfo = cardDatabase[rawName];
+            const cardClass = cardInfo.Class;
+            const cardFaction = plantClasses.has(cardClass) ? "Plant" : "Zombie";
+
+            if (currentFaction !== null && currentFaction !== cardFaction) return; 
+            if (!activeClasses.has(cardClass) && activeClasses.size >= 2) return; 
+            if (currentSeeds.some(s => s.name === rawName)) return; 
+
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${cleanName}</span> <span class="suggestion-class">${cardClass}</span>`;
+            li.onclick = () => addSeed(rawName, cardClass, cardFaction);
+            suggestionsBox.appendChild(li);
+            matches++;
+        }
+    });
+
+    suggestionsBox.style.display = matches > 0 ? 'block' : 'none';
+});
+
+// Hide dropdown if clicked outside
+document.addEventListener('click', (e) => {
+    if (e.target !== seedInput && e.target !== suggestionsBox) {
+        suggestionsBox.style.display = 'none';
+    }
+});
+
+// 2. Add Seed (Handles the 40-card limit)
+function addSeed(rawName, cardClass, cardFaction) {
+    const spaceLeft = 40 - getTotalCards();
+    if (spaceLeft <= 0) return;
+
+    // Add 4 copies, OR however many slots are left before hitting 40
+    const amountToAdd = Math.min(4, spaceLeft);
+
+    currentSeeds.push({ name: rawName, count: amountToAdd, class: cardClass, faction: cardFaction });
+    currentFaction = cardFaction;
+    activeClasses.add(cardClass);
+
+    seedInput.value = '';
+    suggestionsBox.style.display = 'none';
+    renderSeeds();
+}
+
+// 3. Render the UI
+function renderSeeds() {
+    seedList.innerHTML = '';
+    const totalCards = getTotalCards();
+
+    if (currentSeeds.length === 0) {
+        seedList.appendChild(emptySeedMsg);
+        emptySeedMsg.style.display = 'block';
+        generateDeckBtn.disabled = true;
+        currentFaction = null;
+        activeClasses.clear();
+        return;
+    }
+
+    emptySeedMsg.style.display = 'none';
+    generateDeckBtn.disabled = false;
+
+    currentSeeds.forEach(seed => {
+        const li = document.createElement('li');
+        li.className = 'seed-item';
+        const displayName = seed.name.replace(/_/g, ' '); 
+        
+        // Disable the plus button if the card is at x4 OR the deck is at 40 cards
+        const disablePlus = seed.count >= 4 || totalCards >= 40;
+
+        li.innerHTML = `
+            <div class="seed-info">
+                <span class="seed-name">${displayName}</span>
+                <span class="seed-meta">${seed.class}</span>
+            </div>
+            <div class="seed-controls">
+                <button class="seed-btn minus-btn" data-name="${seed.name}">-</button>
+                <span class="seed-count">${seed.count}</span>
+                <button class="seed-btn plus-btn" data-name="${seed.name}" ${disablePlus ? 'disabled' : ''}>+</button>
+            </div>
+        `;
+        seedList.appendChild(li);
+    });
+
+    attachQuantityListeners();
+}
+
+// 4. Handle + and - logic
+function attachQuantityListeners() {
+    document.querySelectorAll('.minus-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const name = e.target.getAttribute('data-name');
+            const seed = currentSeeds.find(s => s.name === name);
+            if (seed) {
+                seed.count--;
+                if (seed.count <= 0) {
+                    currentSeeds = currentSeeds.filter(s => s.name !== name);
+                    activeClasses.clear();
+                    currentSeeds.forEach(s => activeClasses.add(s.class));
+                }
+                renderSeeds();
+            }
+        });
+    });
+
+    document.querySelectorAll('.plus-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const name = e.target.getAttribute('data-name');
+            const seed = currentSeeds.find(s => s.name === name);
+            // Extra check to ensure we don't breach 40
+            if (seed && seed.count < 4 && getTotalCards() < 40) {
+                seed.count++;
+                renderSeeds();
+            }
+        });
+    });
+}
+
+// 5. RESTORED: Clear All logic
+if (clearSeedsBtn) {
+    clearSeedsBtn.addEventListener('click', () => {
+        currentSeeds = [];
+        currentFaction = null;
+        activeClasses.clear();
+        seedInput.value = '';
+        renderSeeds();
+    });
+}
+
+// --- AI DECK BUILDER: SYNERGY ENGINE ---
+
+let synergyMatrix = null;
+
+// 1. Build the Matrix (Runs only once to save processing power)
+function initSynergyMatrix() {
+    if (synergyMatrix) return; // Already built!
+    synergyMatrix = {};
+    console.log("Building Synergy Matrix...");
+
+    Object.values(fullDatabase).forEach(deck => {
+        // Clean the card names by slicing off the "x3 " part
+        const cleanCards = deck.cards.map(c => c.substring(c.indexOf(' ') + 1).trim());
+
+        for (let i = 0; i < cleanCards.length; i++) {
+            const cardA = cleanCards[i];
+            if (!synergyMatrix[cardA]) synergyMatrix[cardA] = {};
+            
+            for (let j = 0; j < cleanCards.length; j++) {
+                if (i === j) continue; // Don't score a card against itself
+                const cardB = cleanCards[j];
+                
+                // Tally every time Card A and Card B appear in the same deck
+                synergyMatrix[cardA][cardB] = (synergyMatrix[cardA][cardB] || 0) + 1;
+            }
+        }
+    });
+    console.log("Synergy Matrix complete!");
+}
+
+// 2. Generate the Deck
+generateDeckBtn.addEventListener('click', () => {
+    initSynergyMatrix(); // Ensure matrix is ready
+    
+    // Disable button to prevent spam clicks
+    generateDeckBtn.disabled = true;
+    generateDeckBtn.innerText = "Calculating Synergies...";
+
+    // Use a tiny timeout to allow the button text to update before the heavy math freezes the UI
+    setTimeout(() => {
+        const finalDeck = buildOptimizedDeck();
+        renderGeneratedDeck(finalDeck);
+        
+        generateDeckBtn.disabled = false;
+        generateDeckBtn.innerText = "Generate Synergy Deck";
+    }, 50);
+});
+
+// 3. The Core Algorithm (Updated with Class Discovery)
+function buildOptimizedDeck() {
+    let workingDeck = currentSeeds.map(s => ({...s}));
+    let workingClasses = new Set(activeClasses);
+    let deckFaction = currentFaction;
+    let totalCards = workingDeck.reduce((sum, c) => sum + c.count, 0);
+
+    while (totalCards < 40) {
+        let bestCard = null;
+        let bestScore = -1;
+
+        const forceSecondClass = workingClasses.size === 1;
+
+        Object.keys(cardDatabase).forEach(candidateName => {
+            const candidateData = cardDatabase[candidateName];
+            const candidateClass = candidateData.Class;
+            const candidateFaction = plantClasses.has(candidateClass) ? "Plant" : "Zombie";
+
+            if (candidateFaction !== deckFaction) return; 
+            if (!workingClasses.has(candidateClass) && workingClasses.size >= 2) return; 
+            if (forceSecondClass && workingClasses.has(candidateClass)) return;
+
+            const existingCopy = workingDeck.find(c => c.name === candidateName);
+            const currentCopies = existingCopy ? existingCopy.count : 0;
+            if (currentCopies >= 4) return; 
+
+            // Base Synergy
+            let score = 0;
+            workingDeck.forEach(deckCard => {
+                if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
+                    score += synergyMatrix[candidateName][deckCard.name] * deckCard.count;
+                }
+            });
+
+            if (score === 0) score = 0.1;
+
+            // --- THE NEW MULTIPLIERS ---
+            // Buffed from 25% to 50%. This heavily encourages the AI to finish the 4th copy!
+            if (currentCopies > 0) score *= (1 + (currentCopies * 0.50));
+
+            // Temperature
+            const variance = 0.9 + (Math.random() * 0.2);
+            score *= variance;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestCard = candidateName;
+            }
+        });
+
+        // Add the winning card
+        if (bestCard) {
+            const existing = workingDeck.find(c => c.name === bestCard);
+            if (existing) {
+                // If it's already in the deck, just add 1 more to push it toward x4
+                existing.count++;
+                totalCards++;
+            } else {
+                // NEW RULE: If it's a brand new card, add a playset of 3 at once!
+                // (Unless we are at 38 or 39 cards, then just fill the remaining space)
+                const spaceLeft = 40 - totalCards;
+                const copiesToAdd = Math.min(3, spaceLeft);
+
+                workingDeck.push({
+                    name: bestCard,
+                    count: copiesToAdd,
+                    class: cardDatabase[bestCard].Class,
+                    cost: cardDatabase[bestCard].Cost 
+                });
+                workingClasses.add(cardDatabase[bestCard].Class);
+                totalCards += copiesToAdd;
+            }
+        } else {
+            console.warn("Algorithm stalled! Not enough valid cards.");
+            break;
+        }
+    }
+
+    return workingDeck;
+}
+
+// 4. Render the Resulting Deck (Updated with Faction Mana Symbols)
+// --- "PSEUDO-AI" DECK NAMING ENGINE ---
+// --- "PSEUDO-AI" DECK NAMING ENGINE (EXPANDED) ---
+function generateDeckName(deck, isPlant) {
+    // Faction-specific adjectives
+    const plantAdjectives = [
+        "Blooming", "Verdant", "Photosynthetic", "Savage", "Radiant", 
+        "Overgrown", "Rooted", "Spicy", "Leafy", "Sun-Soaked", 
+        "Vengeful", "Primal", "Flourishing", "Thorny", "Botanical", 
+        "Wild", "Untamed", "Raging", "Solar", "Fierce", "Bark-Biting", 
+        "Bountiful", "Vibrant", "Enraged", "Majestic", "Vineswept"
+    ];
+    
+    const zombieAdjectives = [
+        "Undead", "Toxic", "Gargantuan", "Vicious", "Ruthless", 
+        "Chaotic", "Dastardly", "Sneaky", "Brain-Hungry", "Galvanized", 
+        "Necrotic", "Ghastly", "Mad", "Cryptic", "Shambling", 
+        "Bizarre", "Mechanical", "Grotesque", "Apocalyptic", "Relentless", 
+        "Monstrous", "Vile", "Cybernetic", "Diabolical", "Mutated", "Stinky"
+    ];
+    
+    // Playstyle nouns
+    const nouns = [
+        "Assault", "Synergy", "Brigade", "Beatdown", "Control", 
+        "Swarm", "Uprising", "Horde", "Protocol", "Rush", 
+        "Aggro", "Tempo", "Engine", "Onslaught", "Vanguard", 
+        "Tactics", "Ambush", "March", "Legion", "Blitz", 
+        "Rebellion", "Syndicate", "Empire", "Invasion", "Cartel", "Offensive"
+    ];
+
+    // Find the "Boss Monster" (a prominent card you have 3 or 4 copies of)
+    const coreCards = deck.filter(c => c.count >= 3);
+    let signatureCardName = "Mystery";
+    
+    if (coreCards.length > 0) {
+        // Pick a random core card to be the star
+        const randomCore = coreCards[Math.floor(Math.random() * coreCards.length)];
+        signatureCardName = randomCore.name.replace(/_/g, ' ');
+    } else {
+        // Fallback: just grab the most expensive card
+        const highestCost = deck.reduce((prev, current) => (prev.cost > current.cost) ? prev : current);
+        signatureCardName = highestCost.name.replace(/_/g, ' ');
+    }
+
+    // Pick random words
+    const prefixes = isPlant ? plantAdjectives : zombieAdjectives;
+    const adj = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+
+    // Randomize the format of the title
+    const formats = [
+        `The ${signatureCardName} ${noun}`,
+        `${adj} ${signatureCardName}`,
+        `${signatureCardName} Protocol`,
+        `Project: ${signatureCardName}`,
+        `${adj} ${signatureCardName} ${noun}`,
+        `Dawn of the ${signatureCardName}`,
+        `Rise of the ${signatureCardName}`,
+        `${signatureCardName} Awakening`,
+        `Operation: ${signatureCardName}`,
+        `The ${signatureCardName} Incident`,
+        `Return of the ${signatureCardName}`,
+        `${signatureCardName} Overdrive`,
+        `Beware the ${signatureCardName}`,
+        `Secret ${signatureCardName} Society`,
+        `${signatureCardName} and Friends`,
+        `The ${adj} ${noun}` // Example: "The Toxic Swarm"
+    ];
+
+    return formats[Math.floor(Math.random() * formats.length)];
+}
+
+
+// 4. Render the Resulting Deck (UPDATED WITH NAMING ENGINE)
+function renderGeneratedDeck(deck) {
+    const resultsContainer = document.getElementById('generatedDeckList');
+    const title = document.getElementById('generatedDeckTitle');
+    
+    resultsContainer.innerHTML = '';
+    title.classList.remove('hidden');
+
+    // Sort by Cost, then Alphabetical
+    deck.sort((a, b) => {
+        const costA = cardDatabase[a.name].Cost;
+        const costB = cardDatabase[b.name].Cost;
+        if (costA !== costB) return costA - costB;
+        return a.name.localeCompare(b.name);
+    });
+
+    // --- IDENTIFY THE HERO ---
+    const classArray = Array.from(new Set(deck.map(c => c.class))).sort();
+    const classKey = classArray.join(',');
+    const heroName = heroMap[classKey] || `Any ${classArray.join(' / ')} Hero`;
+
+    // --- GENERATE THE AI NAME ---
+    const isPlant = currentFaction === "Plant";
+    const aiDeckName = generateDeckName(deck, isPlant);
+
+    // Update Title with the AI Name AND the Hero!
+    title.innerHTML = `
+        <div style="font-size: 1.2em; color: var(--accent); font-style: italic;">"${aiDeckName}"</div>
+        <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 5px;">A Deck for ${heroName}</div>
+    `;
+
+    const manaSymbol = isPlant ? '☀️' : '🧠';
+    const manaColor = isPlant ? '#e3c800' : '#b259db';
+
+    deck.forEach(card => {
+        const div = document.createElement('div');
+        div.className = 'generated-card-item';
+        // Note: I swapped these hardcoded colors to use your CSS variables from earlier so it matches the theme perfectly!
+        div.style.padding = '10px';
+        div.style.background = 'var(--card-bg)';
+        div.style.border = '1px solid rgba(255, 255, 255, 0.05)';
+        div.style.borderRadius = '6px';
+        div.style.marginBottom = '5px';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+
+        const displayName = card.name.replace(/_/g, ' ');
+        const cost = cardDatabase[card.name].Cost;
+
+        div.innerHTML = `
+            <span><span style="color: ${manaColor}; font-weight: bold;">${cost}${manaSymbol}</span> ${displayName}</span>
+            <span style="font-weight: bold; color: var(--accent);">x${card.count}</span>
+        `;
+        resultsContainer.appendChild(div);
+    });
+}
+
+// --- ROUTING LOGIC ---
+
+window.addEventListener('hashchange', handleRouting);
+
+statsBtn.addEventListener('click', () => {
+    window.location.hash = 'stats';
+});
+
+crafterBtn.addEventListener('click', () => {
+    window.location.hash = 'crafter';
+});
+
+if (typeof backBtn !== 'undefined') {
+    backBtn.addEventListener('click', () => {
+        window.location.hash = ''; // Clearing the hash triggers the default Home UI
+    });
+}
 });

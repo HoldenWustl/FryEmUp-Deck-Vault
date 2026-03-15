@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FryEmUp Deck Database</title>
+    <title>PvZ Heroes Deck Database</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +12,7 @@
 <body>
     <header>
         <div class="header-content">
-            <h1>FryEmUp Deck Vault</h1>
+            <h1>PvZH Deck Vault</h1>
             <p>Browsing <span id="deckCount" class="highlight">...</span> <span id="randomAdjective">glorious</span> PvZ
                 Heroes decks <button id="infoBtn" class="info-btn">?</button></p>
             <p class="last-updated">Last updated: Mar 15, 2026</p>
@@ -21,6 +21,7 @@
                 <div id="searchWrapper">
                     <input type="text" id="searchInput" placeholder="Search decks, cards, or videos...">
                 </div>
+                <button id="crafterBtn">AI Deck Builder</button>
                 <button id="statsBtn">View Stats</button>
                 <button id="backBtn" class="hidden">⬅ Back to Decks</button>
             </div>
@@ -31,12 +32,12 @@
         <div id="loading" class="loading">Loading database...</div>
 
         <section id="deckView">
-             <div id="loadingIndicator" class="loading-container">
-                    <div class="spinner"></div>
-                    <p>Loading decks...</p>
-                </div>
+            <div id="loadingIndicator" class="loading-container">
+                <div class="spinner"></div>
+                <p>Loading decks...</p>
+            </div>
             <div id="deckGrid" class="deck-grid">
-               
+
             </div>
         </section>
 
@@ -283,6 +284,36 @@
                 </div>
             </div>
         </section>
+
+        <section id="crafterView" class="hidden">
+            <div class="crafter-header">
+                <h2>AI Deck Builder</h2>
+                <p>Select up to 4 different seed cards. The engine will build the rest of your deck!</p>
+            </div>
+
+            <div class="crafter-input-container" style="position: relative;">
+                <input type="text" id="seedSearchInput" placeholder="Type a card name to add..." autocomplete="off">
+                <ul id="smartSuggestions" class="suggestions-dropdown" style="display: none;"></ul>
+            </div>
+
+            <div class="crafter-seeds-container">
+                <h3>Your Seed Cards:</h3>
+                <ul id="seedList" class="seed-list">
+                    <li id="emptySeedMsg" class="empty-msg">No seeds selected yet. Type a card above!</li>
+                </ul>
+            </div>
+
+            <div class="crafter-controls">
+                <button id="generateDeckBtn" class="generate-btn" disabled>Generate Deck</button>
+                <button id="clearSeedsBtn" class="clear-btn">Clear All</button>
+            </div>
+
+            <div class="crafter-results-container">
+                <h3 id="generatedDeckTitle" class="hidden">Generated Deck</h3>
+                <div id="generatedDeckList" class="generated-deck-grid">
+                </div>
+            </div>
+        </section>
     </main>
 
     <div id="infoModal" class="modal">
@@ -311,7 +342,7 @@
                     yourself below.</p>
 
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
-                    <a href="deck_database_final.json" download="fryemup_deck_database.json" class="download-btn"
+                    <a href="deck_database_final.json" download="pvzh_deck_database.json" class="download-btn"
                         style="flex: 1; text-align: center; min-width: 200px;">
                         📥 Download Decks <span class="file-size">(~1 MB)</span>
                     </a>
