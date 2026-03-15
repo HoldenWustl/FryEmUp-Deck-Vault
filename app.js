@@ -966,9 +966,9 @@ charts.classDominance = new Chart(ctx7, {
     }
 });
 
-        // --- CHART 10: Hero Playrates (Toggleable Radar) ---
+       // --- CHART 10: Hero Playrates (Toggleable Radar) ---
 
-        // 1. Define the exact lists (alphabetical) to keep the 10-point webs perfectly shaped
+        // 1. Define the base lists to determine who belongs to which faction
         const plantHeroes = [
             "Captain Combustible", "Chompzilla", "Citron / Beta-Carrotina",
             "Grass Knuckles", "Green Shadow", "Nightcap", "Rose",
@@ -980,18 +980,35 @@ charts.classDominance = new Chart(ctx7, {
             "The Smash", "Z-Mech"
         ];
 
-        // Helper function to map counts (defaults to 0 if a hero has no decks)
-        const getHeroData = (heroList) => heroList.map(hero => heroCounts[hero] || 0);
+        // NEW: Helper function to map counts AND sort them from highest to lowest
+        const getSortedHeroData = (heroList) => {
+            // Pair the heroes with their counts
+            const paired = heroList.map(hero => ({
+                name: hero,
+                count: heroCounts[hero] || 0
+            }));
+            
+            // Sort descending by count
+            paired.sort((a, b) => b.count - a.count);
+            
+            // Return separated arrays for Chart.js
+            return {
+                labels: paired.map(item => item.name),
+                data: paired.map(item => item.count)
+            };
+        };
 
-        // 2. Initialize the chart with Plant data
+        // 2. Initialize the chart with sorted Plant data
+        const initialPlantData = getSortedHeroData(plantHeroes);
+        
         const ctx10 = document.getElementById('heroChart').getContext('2d');
         charts.heroPlayrates = new Chart(ctx10, {
             type: 'radar',
             data: {
-                labels: plantHeroes,
+                labels: initialPlantData.labels,
                 datasets: [{
                     label: 'Decks Played',
-                    data: getHeroData(plantHeroes),
+                    data: initialPlantData.data,
                     backgroundColor: 'rgba(63, 185, 80, 0.3)', // Green for plants
                     borderColor: '#3fb950',
                     pointBackgroundColor: '#ffffff',
@@ -1001,7 +1018,7 @@ charts.classDominance = new Chart(ctx7, {
                     borderWidth: 2,
                     pointRadius: 3,
                     pointHoverRadius: 6,
-                    tension: 0.3
+                    tension: 0.3 // Keeps the lines between points curved
                 }]
             },
             options: {
@@ -1013,7 +1030,7 @@ charts.classDominance = new Chart(ctx7, {
                         grid: { color: 'rgba(255, 255, 255, 0.1)' },
                         pointLabels: { color: '#c9d1d9', font: { size: 11 } },
                         ticks: { display: false, backdropColor: 'transparent' },
-                        suggestedMin: 0 // Prevents the center from shrinking if counts are high
+                        beginAtZero: true // Anchors the center smoothly
                     }
                 },
                 plugins: {
@@ -1045,14 +1062,18 @@ charts.classDominance = new Chart(ctx7, {
                 const dataset = charts.heroPlayrates.data.datasets[0];
 
                 if (faction === 'plants') {
-                    charts.heroPlayrates.data.labels = plantHeroes;
-                    dataset.data = getHeroData(plantHeroes);
+                    const sortedPlants = getSortedHeroData(plantHeroes);
+                    charts.heroPlayrates.data.labels = sortedPlants.labels;
+                    dataset.data = sortedPlants.data;
+                    
                     dataset.backgroundColor = 'rgba(63, 185, 80, 0.3)'; // Plant Green
                     dataset.borderColor = '#3fb950';
                     dataset.pointBorderColor = '#3fb950';
                 } else {
-                    charts.heroPlayrates.data.labels = zombieHeroes;
-                    dataset.data = getHeroData(zombieHeroes);
+                    const sortedZombies = getSortedHeroData(zombieHeroes);
+                    charts.heroPlayrates.data.labels = sortedZombies.labels;
+                    dataset.data = sortedZombies.data;
+                    
                     dataset.backgroundColor = 'rgba(137, 87, 229, 0.3)'; // Zombie Purple
                     dataset.borderColor = '#8957e5';
                     dataset.pointBorderColor = '#8957e5';
@@ -1069,9 +1090,9 @@ charts.classDominance = new Chart(ctx7, {
         const tricks = typeCounts["Trick"] || 0;
         const environments = typeCounts["Environment"] || 0;
 
-        const avgMinions = numDecks ? (minions / numDecks).toFixed(1) : 0;
-        const avgTricks = numDecks ? (tricks / numDecks).toFixed(1) : 0;
-        const avgEnvironments = numDecks ? (environments / numDecks).toFixed(1) : 0;
+        const avgMinions = allDecks.length ? (minions / allDecks.length).toFixed(1) : 0;
+        const avgTricks = allDecks.length ? (tricks / allDecks.length).toFixed(1) : 0;
+        const avgEnvironments = allDecks.length ? (environments / allDecks.length).toFixed(1) : 0;
 
         const ctx9 = document.getElementById('averageDeckChart').getContext('2d');
         charts.averageDeck = new Chart(ctx9, {
