@@ -1103,8 +1103,8 @@
         "Set": "Event",
         "Set #": null
     },
-    "Hot Lava": {
-        "Name": "Hot Lava",
+    "Hot_Lava": {
+        "Name": "Hot_Lava",
         "Class": "Kabloom",
         "Cost": 1,
         "Strength": null,
@@ -3071,8 +3071,8 @@
         "Set": "Premium",
         "Set #": 1.0
     },
-    "Backup Dancer": {
-        "Name": "Backup Dancer",
+    "Backup_Dancer": {
+        "Name": "Backup_Dancer",
         "Class": "Crazy",
         "Cost": 1,
         "Strength": 1.0,
@@ -4163,8 +4163,8 @@
         "Set": "Colossal",
         "Set #": 3.0
     },
-    "Haunting Zombie": {
-        "Name": "Haunting Zombie",
+    "Haunting_Zombie": {
+        "Name": "Haunting_Zombie",
         "Class": "Beastly",
         "Cost": 2,
         "Strength": 2.0,
@@ -4943,8 +4943,8 @@
         "Set": "Premium",
         "Set #": 1.0
     },
-    "Pool Shark": {
-        "Name": "Pool Shark",
+    "Pool_Shark": {
+        "Name": "Pool_Shark",
         "Class": "Brainy",
         "Cost": 2,
         "Strength": 3.0,

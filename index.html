@@ -15,7 +15,7 @@
             <h1>FryEmUp Deck Vault</h1>
             <p>Browsing <span id="deckCount" class="highlight">...</span> <span id="randomAdjective">glorious</span> PvZ
                 Heroes decks <button id="infoBtn" class="info-btn">?</button></p>
-            <p class="last-updated">Last updated: Mar 14, 2026</p>
+            <p class="last-updated">Last updated: Mar 15, 2026</p>
 
             <div id="controls" class="controls-container">
                 <div id="searchWrapper">
@@ -31,7 +31,13 @@
         <div id="loading" class="loading">Loading database...</div>
 
         <section id="deckView">
-            <div id="deckGrid" class="deck-grid"></div>
+             <div id="loadingIndicator" class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Loading decks...</p>
+                </div>
+            <div id="deckGrid" class="deck-grid">
+               
+            </div>
         </section>
 
         <section id="statsView" class="hidden">
@@ -52,6 +58,7 @@
                             </optgroup>
 
                             <optgroup label="Oldest Decks">
+                                <option value="oldest_1000">1000 Decks</option>
                                 <option value="oldest_500">500 Decks</option>
                                 <option value="oldest_250">250 Decks</option>
                                 <option value="oldest_50">50 Decks</option>
@@ -176,34 +183,35 @@
                         </div>
                     </div>
                     <div class="chart-box full-width">
-    <div class="chart-header-flex">
-        <div class="chart-titles">
-            <h3>Card History & Meta Tracker</h3>
-            <p class="chart-subtitle">Search up to two cards to compare their historical deck inclusion rates over time.</p>
-        </div>
+                        <div class="chart-header-flex">
+                            <div class="chart-titles">
+                                <h3>Card History & Meta Tracker</h3>
+                                <p class="chart-subtitle">Search up to two cards to compare their historical deck
+                                    inclusion rates over time.</p>
+                            </div>
 
-        <div class="trend-search-container" style="display: flex; gap: 10px; align-items: center;">
-            
-            <input type="text" id="historicalSearchInput1" list="historicalOptions"
-                placeholder="Search card 1..." onchange="updateHistoricalChart()">
-            
-            <span style="color: #8b949e; font-size: 0.9em; font-weight: bold;">VS</span>
-            
-            <input type="text" id="historicalSearchInput2" list="historicalOptions"
-                placeholder="Search card 2 (optional)..." onchange="updateHistoricalChart()">
-            
-            <datalist id="historicalOptions"></datalist>
-        </div>
-    </div>
+                            <div class="trend-search-container" style="display: flex; gap: 10px; align-items: center;">
 
-    <div class="canvas-wrapper">
-        <canvas id="historicalCardChart"></canvas>
-        <div id="historicalEmptyMsg"
-            style="display: none; height: 100%; align-items: center; justify-content: center; text-align: center; color: #8b949e; font-style: italic; padding: 20px;">
-            Not enough historical data or cards not found.
-        </div>
-    </div>
-</div>
+                                <input type="text" id="historicalSearchInput1" list="historicalOptions"
+                                    placeholder="Search card 1..." onchange="updateHistoricalChart()">
+
+                                <span style="color: #8b949e; font-size: 0.9em; font-weight: bold;">VS</span>
+
+                                <input type="text" id="historicalSearchInput2" list="historicalOptions"
+                                    placeholder="Search card 2 (optional)..." onchange="updateHistoricalChart()">
+
+                                <datalist id="historicalOptions"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="canvas-wrapper">
+                            <canvas id="historicalCardChart"></canvas>
+                            <div id="historicalEmptyMsg"
+                                style="display: none; height: 100%; align-items: center; justify-content: center; text-align: center; color: #8b949e; font-style: italic; padding: 20px;">
+                                Not enough historical data or cards not found.
+                            </div>
+                        </div>
+                    </div>
                     <div class="chart-box">
                         <h3>Class Dominance</h3>
                         <p class="chart-subtitle">Most played classes based on total copies.</p>
@@ -305,7 +313,7 @@
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
                     <a href="deck_database_final.json" download="fryemup_deck_database.json" class="download-btn"
                         style="flex: 1; text-align: center; min-width: 200px;">
-                        📥 Download Decks <span class="file-size">(~890 KB)</span>
+                        📥 Download Decks <span class="file-size">(~1 MB)</span>
                     </a>
 
                     <a href="card_data.json" download="pvzh_card_data.json" class="download-btn"

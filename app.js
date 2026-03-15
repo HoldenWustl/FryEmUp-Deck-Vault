@@ -108,7 +108,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Render Decks Function ---
     function renderDecks(data) {
+    const searchInput = document.getElementById('searchInput');
+    const statsBtn = document.getElementById('statsBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+
+    // 1. Show loader and disable controls BEFORE rendering
+    if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+    deckGrid.classList.add('hidden'); // Hide the grid while building
+    if (statsBtn) statsBtn.disabled = true;
+
+    // Use a setTimeout so the browser has a split second to paint the loading 
+    // spinner and disable the buttons before locking up to do the heavy rendering
+    setTimeout(() => {
         deckGrid.innerHTML = '';
+        
+        // OPTIMIZATION: Create a Document Fragment. 
+        // This builds all HTML in memory first, rather than forcing the browser 
+        // to redraw the page thousands of times inside the loop.
+        const fragment = document.createDocumentFragment();
 
         for (const [deckKey, deckInfo] of Object.entries(data)) {
             const cardEl = document.createElement('div');
@@ -148,9 +165,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 ${cardsHtml}
             `;
-            deckGrid.appendChild(cardEl);
+            
+            // Append to the in-memory fragment, not the live DOM
+            fragment.appendChild(cardEl);
         }
-    }
+
+        // 2. Append everything to the live DOM at once!
+        deckGrid.appendChild(fragment);
+
+        // 3. Hide loader and re-enable controls AFTER rendering
+        if (loadingIndicator) loadingIndicator.classList.add('hidden');
+        deckGrid.classList.remove('hidden');
+        if (statsBtn) statsBtn.disabled = false;
+
+    }, 50); // 50ms delay allows the UI to show the loading state first
+}
 
     // --- Smart Live Search ---
     searchInput.addEventListener('input', (e) => {
