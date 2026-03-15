@@ -1421,26 +1421,31 @@ if (clearSeedsBtn) {
 // --- AI DECK BUILDER: SYNERGY ENGINE ---
 
 let synergyMatrix = null;
+let cardFrequencies = null; // NEW: We need to track overall card popularity
 
-// 1. Build the Matrix (Runs only once to save processing power)
+// 1. Build the Matrix 
 function initSynergyMatrix() {
-    if (synergyMatrix) return; // Already built!
+    if (synergyMatrix) return; 
     synergyMatrix = {};
-    console.log("Building Synergy Matrix...");
+    cardFrequencies = {}; // Initialize frequencies
+    console.log("Building Synergy Matrix & Frequency Data...");
 
     Object.values(fullDatabase).forEach(deck => {
-        // Clean the card names by slicing off the "x3 " part
+        // Clean the card names
         const cleanCards = deck.cards.map(c => c.substring(c.indexOf(' ') + 1).trim());
+
+        // Tally how many decks each card appears in overall
+        cleanCards.forEach(card => {
+            cardFrequencies[card] = (cardFrequencies[card] || 0) + 1;
+        });
 
         for (let i = 0; i < cleanCards.length; i++) {
             const cardA = cleanCards[i];
             if (!synergyMatrix[cardA]) synergyMatrix[cardA] = {};
             
             for (let j = 0; j < cleanCards.length; j++) {
-                if (i === j) continue; // Don't score a card against itself
+                if (i === j) continue; 
                 const cardB = cleanCards[j];
-                
-                // Tally every time Card A and Card B appear in the same deck
                 synergyMatrix[cardA][cardB] = (synergyMatrix[cardA][cardB] || 0) + 1;
             }
         }
@@ -1467,11 +1472,21 @@ generateDeckBtn.addEventListener('click', () => {
 });
 
 // 3. The Core Algorithm (Updated with Class Discovery)
+// 3. The Core Algorithm (UPDATED WITH DYNAMIC PERSONALITY & INCREASED VARIANCE)
 function buildOptimizedDeck() {
     let workingDeck = currentSeeds.map(s => ({...s}));
     let workingClasses = new Set(activeClasses);
     let deckFaction = currentFaction;
     let totalCards = workingDeck.reduce((sum, c) => sum + c.count, 0);
+
+    // --- THE FIX: DYNAMIC DECK PERSONALITY ---
+    // Randomize the weights for this specific run!
+    // rawWeight will be anywhere from 0.25 (Heavy Combo) to 0.55 (Heavy Goodstuff)
+    const rawWeight = 0.25 + (Math.random() * 0.30);
+    const affinityWeight = 1.0 - rawWeight;
+    
+    // (Optional) Log it so you can see what kind of AI is building your deck!
+    console.log(`AI Personality for this build -> Raw (Goodstuff): ${Math.round(rawWeight * 100)}% | Affinity (Combo): ${Math.round(affinityWeight * 100)}%`);
 
     while (totalCards < 40) {
         let bestCard = null;
@@ -1492,22 +1507,34 @@ function buildOptimizedDeck() {
             const currentCopies = existingCopy ? existingCopy.count : 0;
             if (currentCopies >= 4) return; 
 
-            // Base Synergy
+            // Base Synergy Calculation
             let score = 0;
             workingDeck.forEach(deckCard => {
                 if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
-                    score += synergyMatrix[candidateName][deckCard.name] * deckCard.count;
+                    
+                    const coOccurrences = synergyMatrix[candidateName][deckCard.name];
+                    const candidateTotalPlays = cardFrequencies[candidateName] || 1;
+
+                    let rawSynergy = coOccurrences;
+                    let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays;
+
+                    // Blend them together using our dynamic personality weights!
+                    let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
+
+                    const isOriginalSeed = currentSeeds.some(s => s.name === deckCard.name);
+                    const seedMultiplier = isOriginalSeed ? 3 : 1;
+
+                    score += blendedSynergy * deckCard.count * seedMultiplier;
                 }
             });
 
             if (score === 0) score = 0.1;
 
-            // --- THE NEW MULTIPLIERS ---
-            // Buffed from 25% to 50%. This heavily encourages the AI to finish the 4th copy!
             if (currentCopies > 0) score *= (1 + (currentCopies * 0.50));
 
-            // Temperature
-            const variance = 0.9 + (Math.random() * 0.2);
+            // --- THE FIX: INCREASED TEMPERATURE ---
+            // Bumped from +/- 10% to +/- 15% for just a little more chaos
+            const variance = 0.85 + (Math.random() * 0.3);
             score *= variance;
 
             if (score > bestScore) {
@@ -1516,16 +1543,13 @@ function buildOptimizedDeck() {
             }
         });
 
-        // Add the winning card
+        // Add the winning card (Logic stays exactly the same)
         if (bestCard) {
             const existing = workingDeck.find(c => c.name === bestCard);
             if (existing) {
-                // If it's already in the deck, just add 1 more to push it toward x4
                 existing.count++;
                 totalCards++;
             } else {
-                // NEW RULE: If it's a brand new card, add a playset of 3 at once!
-                // (Unless we are at 38 or 39 cards, then just fill the remaining space)
                 const spaceLeft = 40 - totalCards;
                 const copiesToAdd = Math.min(3, spaceLeft);
 
