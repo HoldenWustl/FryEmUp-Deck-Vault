@@ -628,3 +628,73 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     color: #ffffff;
     border-color: #8957e5;
 }
+
+/* Layout for the header area */
+.chart-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap; /* Allows stacking on very small screens */
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.chart-titles {
+    flex: 1; /* Pushes the toggle to the right */
+}
+
+/* The Segmented Control Container */
+.synergy-toggle {
+    position: relative;
+    display: inline-flex;
+    background-color: #161b22; /* Matches your chart border colors */
+    border: 1px solid #30363d; /* Matches your grid lines */
+    border-radius: 20px;
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+/* Hide default radio buttons */
+.synergy-toggle input[type="radio"] {
+    display: none;
+}
+
+/* Style the text labels */
+.synergy-toggle label {
+    position: relative;
+    z-index: 2; /* Keeps text above the sliding pill */
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #8b949e; /* Dimmer text for inactive */
+    cursor: pointer;
+    transition: color 0.3s ease;
+    text-align: center;
+    user-select: none;
+}
+
+/* The moving background pill */
+.toggle-slider {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    bottom: 3px;
+    width: calc(50% - 3px); /* Half width minus padding */
+    background-color: #30363d;
+    border-radius: 16px;
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); /* Smooth snapping animation */
+}
+
+/* --- Toggle Logic --- */
+
+/* Move the slider to the right when Normalized is checked */
+.synergy-toggle input[id="synergyNorm"]:checked ~ .toggle-slider {
+    transform: translateX(100%);
+}
+
+/* Brighten the text color of whichever option is currently checked */
+.synergy-toggle input[id="synergyRaw"]:checked ~ label[for="synergyRaw"],
+.synergy-toggle input[id="synergyNorm"]:checked ~ label[for="synergyNorm"] {
+    color: #c9d1d9; /* Brighter text for active state */
+}

@@ -43,9 +43,19 @@
                         <label for="deckLimitFilter">Timeframe:</label>
                         <select id="deckLimitFilter">
                             <option value="all">All-Time</option>
-                            <option value="500">Latest 500 Decks</option>
-                            <option value="200">Latest 200 Decks</option>
-                            <option value="50">Latest 50 Decks</option>
+
+                            <optgroup label="Latest Decks">
+                                <option value="latest_1000">1000 Decks</option>
+                                <option value="latest_500">500 Decks</option>
+                                <option value="latest_250">250 Decks</option>
+                                <option value="latest_50">50 Decks</option>
+                            </optgroup>
+
+                            <optgroup label="Oldest Decks">
+                                <option value="oldest_500">500 Decks</option>
+                                <option value="oldest_250">250 Decks</option>
+                                <option value="oldest_50">50 Decks</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>
@@ -67,7 +77,18 @@
 
                 <div class="charts-grid">
                     <div class="chart-box full-width">
-                        <h3>Most Used Cards (Total Copies)</h3>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3 style="margin: 0;">Most Used Cards</h3>
+                            <select id="topCardsFilter" onchange="applyTopCardsFilter(this.value)"
+                                style="background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 4px 8px;">
+                                <option value="all">All Cards</option>
+                                <option value="minion">Minions</option>
+                                <option value="trick">Tricks</option>
+                                <option value="environment">Environments</option>
+                                <option value="wincon">Win Conditions (Cost 5+)</option>
+                            </select>
+                        </div>
                         <div class="canvas-wrapper">
                             <canvas id="topCardsChart"></canvas>
                         </div>
@@ -97,17 +118,34 @@
                         </div>
                     </div>
 
-                    
+
 
                     <div class="chart-box">
-                        <h3>Ultimate Synergies</h3>
-                        <p class="chart-subtitle">Cards most frequently played together in the same deck.</p>
+                        <div class="chart-header-flex">
+                            <div class="chart-titles">
+                                <h3>Ultimate Synergies</h3>
+                                <p class="chart-subtitle">Cards most frequently played together in the same deck.</p>
+                            </div>
+
+                            <div class="synergy-toggle">
+                                <input type="radio" id="synergyRaw" name="synergyType" value="raw" checked
+                                    onchange="toggleSynergyChart('raw')">
+                                <label for="synergyRaw">Raw Count</label>
+
+                                <input type="radio" id="synergyNorm" name="synergyType" value="normalized"
+                                    onchange="toggleSynergyChart('normalized')">
+                                <label for="synergyNorm">Normalized</label>
+
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+
                         <div class="canvas-wrapper">
                             <canvas id="pairsChart"></canvas>
                         </div>
                     </div>
 
-                    
+
 
                     <div class="chart-box">
                         <h3>Overall Mana Curve</h3>
@@ -119,7 +157,7 @@
 
                     <div class="chart-box">
                         <h3>Fry's Average Deck Formula</h3>
-                        <p class="chart-subtitle">How a typical 40-card deck is split by cost.</p>
+                        <p class="chart-subtitle">How a typical 40-card deck is split by type.</p>
                         <div class="canvas-wrapper">
                             <canvas id="averageDeckChart"></canvas>
                         </div>
@@ -137,7 +175,35 @@
                             </div>
                         </div>
                     </div>
+                    <div class="chart-box full-width">
+    <div class="chart-header-flex">
+        <div class="chart-titles">
+            <h3>Card History & Meta Tracker</h3>
+            <p class="chart-subtitle">Search up to two cards to compare their historical deck inclusion rates over time.</p>
+        </div>
 
+        <div class="trend-search-container" style="display: flex; gap: 10px; align-items: center;">
+            
+            <input type="text" id="historicalSearchInput1" list="historicalOptions"
+                placeholder="Search card 1..." onchange="updateHistoricalChart()">
+            
+            <span style="color: #8b949e; font-size: 0.9em; font-weight: bold;">VS</span>
+            
+            <input type="text" id="historicalSearchInput2" list="historicalOptions"
+                placeholder="Search card 2 (optional)..." onchange="updateHistoricalChart()">
+            
+            <datalist id="historicalOptions"></datalist>
+        </div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="historicalCardChart"></canvas>
+        <div id="historicalEmptyMsg"
+            style="display: none; height: 100%; align-items: center; justify-content: center; text-align: center; color: #8b949e; font-style: italic; padding: 20px;">
+            Not enough historical data or cards not found.
+        </div>
+    </div>
+</div>
                     <div class="chart-box">
                         <h3>Class Dominance</h3>
                         <p class="chart-subtitle">Most played classes based on total copies.</p>
@@ -146,65 +212,65 @@
                         </div>
                     </div>
 
-                   
-                    <div class="chart-box">
-    <h3>Most Played Heroes</h3>
-    <p class="chart-subtitle">Deduced from deck class combinations.</p>
-    
-    <div class="hero-tabs">
-        <button class="hero-tab active" data-faction="plants">Plants</button>
-        <button class="hero-tab" data-faction="zombies">Zombies</button>
-    </div>
 
-    <div class="canvas-wrapper">
-        <canvas id="heroChart"></canvas>
-    </div>
-</div>
+                    <div class="chart-box">
+                        <h3>Most Played Heroes</h3>
+                        <p class="chart-subtitle">Deduced from deck class combinations.</p>
+
+                        <div class="hero-tabs">
+                            <button class="hero-tab active" data-faction="plants">Plants</button>
+                            <button class="hero-tab" data-faction="zombies">Zombies</button>
+                        </div>
+
+                        <div class="canvas-wrapper">
+                            <canvas id="heroChart"></canvas>
+                        </div>
+                    </div>
 
                     <div class="chart-box extremes-box">
-    <h3>The Deck Extremes</h3>
-    <p class="chart-subtitle">Most extreme decks by Spark cost and Mana curve. Click to watch!</p>
+                        <h3>The Deck Extremes</h3>
+                        <p class="chart-subtitle">Most extreme decks by Spark cost and Mana curve. Click to watch!</p>
 
-    <div class="extremes-grid">
-        
-        <div class="extreme-card whale-card">
-            <h4 class="extreme-title">Ultimate Whale Deck</h4>
-            <a id="mostP2wLink" href="#" target="_blank" class="extreme-link">
-                <img id="mostP2wImg" src="" alt="Whale Deck Thumbnail" class="extreme-img">
-                <p id="mostP2wDeck" class="extreme-deck-name">-</p>
-            </a>
-            <p id="mostP2wCost" class="extreme-cost">- Sparks</p>
-        </div>
+                        <div class="extremes-grid">
 
-        <div class="extreme-card f2p-card">
-            <h4 class="extreme-title">F2P Champion</h4>
-            <a id="leastP2wLink" href="#" target="_blank" class="extreme-link">
-                <img id="leastP2wImg" src="" alt="F2P Deck Thumbnail" class="extreme-img">
-                <p id="leastP2wDeck" class="extreme-deck-name">-</p>
-            </a>
-            <p id="leastP2wCost" class="extreme-cost">- Sparks</p>
-        </div>
+                            <div class="extreme-card whale-card">
+                                <h4 class="extreme-title">Ultimate Whale Deck</h4>
+                                <a id="mostP2wLink" href="#" target="_blank" class="extreme-link">
+                                    <img id="mostP2wImg" src="" alt="Whale Deck Thumbnail" class="extreme-img">
+                                    <p id="mostP2wDeck" class="extreme-deck-name">-</p>
+                                </a>
+                                <p id="mostP2wCost" class="extreme-cost">- Sparks</p>
+                            </div>
 
-        <div class="extreme-card heavy-card">
-            <h4 class="extreme-title">Heaviest Curve</h4>
-            <a id="heaviestLink" href="#" target="_blank" class="extreme-link">
-                <img id="heaviestImg" src="" alt="Heaviest Deck Thumbnail" class="extreme-img">
-                <p id="heaviestDeck" class="extreme-deck-name">-</p>
-            </a>
-            <p id="heaviestCost" class="extreme-cost">- Avg Cost</p>
-        </div>
+                            <div class="extreme-card f2p-card">
+                                <h4 class="extreme-title">F2P Champion</h4>
+                                <a id="leastP2wLink" href="#" target="_blank" class="extreme-link">
+                                    <img id="leastP2wImg" src="" alt="F2P Deck Thumbnail" class="extreme-img">
+                                    <p id="leastP2wDeck" class="extreme-deck-name">-</p>
+                                </a>
+                                <p id="leastP2wCost" class="extreme-cost">- Sparks</p>
+                            </div>
 
-        <div class="extreme-card light-card">
-            <h4 class="extreme-title">Lightest Curve</h4>
-            <a id="lightestLink" href="#" target="_blank" class="extreme-link">
-                <img id="lightestImg" src="" alt="Lightest Deck Thumbnail" class="extreme-img">
-                <p id="lightestDeck" class="extreme-deck-name">-</p>
-            </a>
-            <p id="lightestCost" class="extreme-cost">- Avg Cost</p>
-        </div>
+                            <div class="extreme-card heavy-card">
+                                <h4 class="extreme-title">Heaviest Curve</h4>
+                                <a id="heaviestLink" href="#" target="_blank" class="extreme-link">
+                                    <img id="heaviestImg" src="" alt="Heaviest Deck Thumbnail" class="extreme-img">
+                                    <p id="heaviestDeck" class="extreme-deck-name">-</p>
+                                </a>
+                                <p id="heaviestCost" class="extreme-cost">- Avg Cost</p>
+                            </div>
 
-    </div>
-</div>
+                            <div class="extreme-card light-card">
+                                <h4 class="extreme-title">Lightest Curve</h4>
+                                <a id="lightestLink" href="#" target="_blank" class="extreme-link">
+                                    <img id="lightestImg" src="" alt="Lightest Deck Thumbnail" class="extreme-img">
+                                    <p id="lightestDeck" class="extreme-deck-name">-</p>
+                                </a>
+                                <p id="lightestCost" class="extreme-cost">- Avg Cost</p>
+                            </div>
+
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -239,12 +305,12 @@
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
                     <a href="deck_database_final.json" download="fryemup_deck_database.json" class="download-btn"
                         style="flex: 1; text-align: center; min-width: 200px;">
-                        📥 Download Decks <span class="file-size">(~660 KB)</span>
+                        📥 Download Decks <span class="file-size">(~890 KB)</span>
                     </a>
 
                     <a href="card_data.json" download="pvzh_card_data.json" class="download-btn"
                         style="flex: 1; text-align: center; background-color: #238636; min-width: 200px;">
-                        📊 Download Card Data <span class="file-size">(~170 KB)</span>
+                        📊 Download Card Data <span class="file-size">(~175 KB)</span>
                     </a>
                 </div>
             </div>
@@ -252,6 +318,5 @@
     </div>
     <script src="app.js"></script>
 </body>
-
 
 </html>

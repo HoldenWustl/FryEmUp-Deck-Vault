@@ -443,6 +443,30 @@
         "Set": "Galactic",
         "Set #": 2.0
     },
+    "Cattail": {
+        "Name": "Cattail",
+        "Class": "Smarty",
+        "Cost": 3,
+        "Strength": 3.0,
+        "Health": 2.0,
+        "Description": "Amphibious ",
+        "Type": "Animal Plant",
+        "Rarity": "Common",
+        "Set": "Basic",
+        "Set #": 1.0
+    },
+    "Skyshooter": {
+        "Name": "Skyshooter",
+        "Class": "Mega-Grow",
+        "Cost": 4,
+        "Strength": 3.0,
+        "Health": 3.0,
+        "Description": "When played on Heights: This gets +2/+2. ",
+        "Type": "Pea Plant",
+        "Rarity": "Uncommon",
+        "Set": "Premium",
+        "Set #": 1.0
+    },
     "Cherry_Bomb": {
         "Name": "Cherry_Bomb",
         "Class": "Kabloom",
@@ -521,7 +545,7 @@
         "Cost": 3,
         "Strength": 3.0,
         "Health": 3.0,
-        "Description": "When played: Fzreeze all Gravestones.",
+        "Description": "When played: Freeze all Gravestones.",
         "Type": "Bean Plant",
         "Rarity": "Super-Rare",
         "Set": "Galactic",
@@ -694,6 +718,18 @@
         "Rarity": "Event",
         "Set": "Event",
         "Set #": null
+    },
+    "Bluesberry": {
+        "Name": "Bluesberry",
+        "Class": "Kabloom",
+        "Cost": 5,
+        "Strength": 3.0,
+        "Health": 3.0,
+        "Description": "When played: Do 2 damage.",
+        "Type": "Berry Plant",
+        "Rarity": "Uncommon",
+        "Set": "Premium",
+        "Set #": 1.0
     },
     "Espresso_Fiesta": {
         "Name": "Espresso_Fiesta",
@@ -1622,13 +1658,25 @@
     "Peashooter": {
         "Name": "Peashooter",
         "Class": "Mega-Grow",
-        "Cost": 4,
-        "Strength": 3.0,
-        "Health": 2.0,
-        "Description": "When played on Heights: This gets +2/+2",
+        "Cost": 1,
+        "Strength": 1.0,
+        "Health": 1.0,
+        "Description": "",
         "Type": "Pea Plant",
-        "Rarity": "Uncommon",
-        "Set": "Premium",
+        "Rarity": "Common",
+        "Set": "Basic",
+        "Set #": 1.0
+    },
+    "Smoosh-Shroom": {
+        "Name": "Smoosh-Shroom",
+        "Class": "Smarty",
+        "Cost": 5,
+        "Strength": 5.0,
+        "Health": 4.0,
+        "Description": "",
+        "Type": "Mushroom Plant",
+        "Rarity": "Common",
+        "Set": "Basic",
         "Set #": 1.0
     },
     "Pecanolith": {
@@ -3647,8 +3695,8 @@
         "Set": "Galactic",
         "Set #": 2.0
     },
-    "Drum Major": {
-        "Name": "Drum Major",
+    "Drum_Major": {
+        "Name": "Drum_Major",
         "Class": "Brainy",
         "Cost": 4,
         "Strength": 4.0,
