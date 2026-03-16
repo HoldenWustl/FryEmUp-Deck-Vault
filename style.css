@@ -45,9 +45,9 @@ header {
     color: var(--text-secondary);
     margin: 0 0 1.5rem 0;
 }
-
 .controls-container {
     display: flex;
+    flex-wrap: wrap; /* This is the magic word! Allows items to move to a new line */
     justify-content: center;
     gap: 10px;
     max-width: 600px;
@@ -55,13 +55,14 @@ header {
 }
 
 #searchWrapper {
-    flex-grow: 1;
+    /* On mobile, this will force the search bar to take up its own full row */
+    flex: 1 1 100%; 
     display: flex;
 }
 
 input[type="text"] {
     flex: 1;
-    padding: 10px 15px;
+    padding: 12px 15px; /* Bumped padding slightly for better mobile tapping */
     border-radius: 5px;
     border: none;
     background-color: var(--card-bg);
@@ -70,7 +71,8 @@ input[type="text"] {
 }
 
 button {
-    padding: 10px 20px;
+    flex: 1; /* Makes the buttons stretch and share the bottom row evenly on mobile */
+    padding: 12px 15px;
     background-color: var(--accent);
     color: white;
     border: none;
@@ -78,6 +80,23 @@ button {
     cursor: pointer;
     font-weight: bold;
     transition: background-color 0.2s;
+    white-space: nowrap; /* Stops button text from awkwardly wrapping to two lines */
+}
+
+/* --- THE DESKTOP FIX --- */
+/* Once the screen is wider than 600px, put everything back on one single line */
+@media (min-width: 600px) {
+    .controls-container {
+        flex-wrap: nowrap; 
+    }
+    
+    #searchWrapper {
+        flex: 1; /* Let the search bar shrink back down to share the row */
+    }
+    
+    button {
+        flex: none; /* Buttons go back to their natural size */
+    }
 }
 
 button:hover { background-color: #0096b4; }
