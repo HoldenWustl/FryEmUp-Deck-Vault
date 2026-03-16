@@ -146,7 +146,7 @@
     "Banana_Peel": {
         "Name": "Banana_Peel",
         "Class": "Mega-Grow",
-        "Cost": 1,
+        "Cost": 2,
         "Strength": null,
         "Health": null,
         "Description": "Move a Zombie. Conjure a Banana.",
@@ -398,7 +398,7 @@
     "Cactus": {
         "Name": "Cactus",
         "Class": "Guardian",
-        "Cost": 2,
+        "Cost": 3,
         "Strength": 1.0,
         "Health": 5.0,
         "Description": "Bullseye.",
@@ -1022,7 +1022,7 @@
     "Half-Banana": {
         "Name": "Half-Banana",
         "Class": "Mega-Grow",
-        "Cost": 1,
+        "Cost": 2,
         "Strength": 2.0,
         "Health": 2.0,
         "Description": "When destroyed: All Bananas in your hand get +1/+1",
@@ -1106,7 +1106,7 @@
     "Hot_Lava": {
         "Name": "Hot_Lava",
         "Class": "Kabloom",
-        "Cost": 1,
+        "Cost": 0,
         "Strength": null,
         "Health": null,
         "Description": "Before Combat here: Do 1 damage to each Plant and Zombie here.",
@@ -1142,7 +1142,7 @@
     "Invasive_Species": {
         "Name": "Invasive_Species",
         "Class": "Kabloom",
-        "Cost": 3,
+        "Cost": 2,
         "Strength": 2.0,
         "Health": 4.0,
         "Description": "While in an environent: This gets +3 attack.",
@@ -1190,7 +1190,7 @@
     "Jugger-Nut": {
         "Name": "Jugger-Nut",
         "Class": "Guardian",
-        "Cost": 2,
+        "Cost": 3,
         "Strength": 2.0,
         "Health": 2.0,
         "Description": "Armored 1. Bullseye.",
@@ -1262,7 +1262,7 @@
     "Lava_Guava": {
         "Name": "Lava_Guava",
         "Class": "Kabloom",
-        "Cost": 5,
+        "Cost": 4,
         "Strength": null,
         "Health": null,
         "Description": "Do 2 damage to each Zombie here and next door. If played on the ground, make Hot Lava here.",
@@ -1454,7 +1454,7 @@
     "Mixed_Nuts": {
         "Name": "Mixed_Nuts",
         "Class": "Solar",
-        "Cost": 3,
+        "Cost": 2,
         "Strength": 2.0,
         "Health": 2.0,
         "Description": "When played: This gets +2/+2 if there's a Plant with Team-Up here.",
@@ -1886,7 +1886,7 @@
     "Power_Flower": {
         "Name": "Power_Flower",
         "Class": "Solar",
-        "Cost": 5,
+        "Cost": 4,
         "Strength": 3.0,
         "Health": 5.0,
         "Description": "Strikethrough. Start of turn: Heal your Hero for 1 for each Flower.",
@@ -1898,7 +1898,7 @@
     "Prickly_Pear": {
         "Name": "Prickly_Pear",
         "Class": "Guardian",
-        "Cost": 4,
+        "Cost": 5,
         "Strength": 0.0,
         "Health": 4.0,
         "Description": "Team-Up. When hurt: Do 4 damage to a Zombie here.",
@@ -2102,7 +2102,7 @@
     "Sea-Shroom": {
         "Name": "Sea-Shroom",
         "Class": "Guardian",
-        "Cost": 2,
+        "Cost": 1,
         "Strength": 2.0,
         "Health": 2.0,
         "Description": "Amphibious.",
@@ -2210,7 +2210,7 @@
     "Sizzle": {
         "Name": "Sizzle",
         "Class": "Kabloom",
-        "Cost": 5,
+        "Cost": 3,
         "Strength": null,
         "Health": null,
         "Description": "Do 5 damage to a Zombie.",
@@ -2330,7 +2330,7 @@
     "Soul_Patch": {
         "Name": "Soul_Patch",
         "Class": "Guardian",
-        "Cost": 7,
+        "Cost": 6,
         "Strength": 5.0,
         "Health": 10.0,
         "Description": "Armored 1. If your Hero would get hurt, this gets hurt instead.",
@@ -2366,7 +2366,7 @@
     "Spikeweed_Sector": {
         "Name": "Spikeweed_Sector",
         "Class": "Guardian",
-        "Cost": 2,
+        "Cost": 3,
         "Strength": null,
         "Health": null,
         "Description": "Before Combat here: Do 2 damage to a zombie here.",
@@ -2498,7 +2498,7 @@
     "Cross-Pollination": {
         "Name": "Cross-Pollination",
         "Class": "Solar",
-        "Cost": 4,
+        "Cost": 3,
         "Strength": null,
         "Health": null,
         "Description": "All Plants get Strikethrough this turn. Conjure a trick.",
@@ -2522,7 +2522,7 @@
     "Sunflower_Seed": {
         "Name": "Sunflower_Seed",
         "Class": "Solar",
-        "Cost": 3,
+        "Cost": 2,
         "Strength": 2.0,
         "Health": 2.0,
         "Description": "When destroyed: Make a sunflower here.",
@@ -2594,7 +2594,7 @@
     "Tactical_Cuke": {
         "Name": "Tactical_Cuke",
         "Class": "Solar",
-        "Cost": 6,
+        "Cost": 5,
         "Strength": null,
         "Health": null,
         "Description": "Destroy all Plants and Zombies on the Ground. ",
@@ -2846,7 +2846,7 @@
     "Wall-Nut_Bowling": {
         "Name": "Wall-Nut_Bowling",
         "Class": "Guardian",
-        "Cost": 9,
+        "Cost": 8,
         "Strength": null,
         "Health": null,
         "Description": "Make a Wall-Nut in each Ground lane. Attack for 6 damage in those lanes.",
@@ -3170,7 +3170,7 @@
     "B-flat": {
         "Name": "B-flat",
         "Class": "Beastly",
-        "Cost": 4,
+        "Cost": 3,
         "Strength": null,
         "Health": null,
         "Description": "Destroy a random Plant.",
@@ -4022,7 +4022,7 @@
     "Gargantuar-Throwing_Imp": {
         "Name": "Gargantuar-Throwing_Imp",
         "Class": "Crazy",
-        "Cost": 5,
+        "Cost": 4,
         "Strength": 2.0,
         "Health": 2.0,
         "Description": "When hurt: Make a random Gargantuar that costs 5 Brains in a random lane. ",
@@ -4502,7 +4502,7 @@
     "Leftovers": {
         "Name": "Leftovers",
         "Class": "Hearty",
-        "Cost": 2,
+        "Cost": 1,
         "Strength": null,
         "Health": null,
         "Description": "All Zombies get +1/+1.",
@@ -4562,7 +4562,7 @@
     "Lost_Colosseum": {
         "Name": "Lost_Colosseum",
         "Class": "Hearty",
-        "Cost": 3,
+        "Cost": 2,
         "Strength": 2.0,
         "Health": 3.0,
         "Description": "Frenzy, Fusion: A Zombie played on this gets +2/+3 and Frenzy. ",
@@ -5018,7 +5018,7 @@
     "Ra_Zombie": {
         "Name": "Ra_Zombie",
         "Class": "Hearty",
-        "Cost": 6,
+        "Cost": 5,
         "Strength": 3.0,
         "Health": 4.0,
         "Description": "When played: The Plant Hero loses 2 Sun this turn",
@@ -5978,7 +5978,7 @@
     "Zombot_Stomp": {
         "Name": "Zombot_Stomp",
         "Class": "Sneaky",
-        "Cost": 7,
+        "Cost": 6,
         "Strength": null,
         "Health": null,
         "Description": "Bounce all Plants on the Ground",
@@ -5990,7 +5990,7 @@
     "Zombot's_Wrath": {
         "Name": "Zombot's_Wrath",
         "Class": "Crazy",
-        "Cost": 3,
+        "Cost": 2,
         "Strength": null,
         "Health": null,
         "Description": "Do 3 damage. If there is a Zombie in every lane, this does double damage.",

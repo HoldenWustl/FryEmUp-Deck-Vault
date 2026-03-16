@@ -1423,20 +1423,49 @@ if (clearSeedsBtn) {
 let synergyMatrix = null;
 let cardFrequencies = null; // NEW: We need to track overall card popularity
 
-// 1. Build the Matrix 
+// 1. Build the Matrix (UPDATED WITH META-AWARENESS TIME WEIGHTS)
 function initSynergyMatrix() {
     if (synergyMatrix) return; 
     synergyMatrix = {};
-    cardFrequencies = {}; // Initialize frequencies
-    console.log("Building Synergy Matrix & Frequency Data...");
+    cardFrequencies = {}; 
 
-    Object.values(fullDatabase).forEach(deck => {
+    const decks = Object.values(fullDatabase);
+
+    // --- STEP A: Find the date thresholds ---
+    // Extract all valid timestamps, fallback to 0 if missing/invalid
+    const deckTimestamps = decks.map(d => {
+        const time = d.upload_date ? new Date(d.upload_date).getTime() : 0;
+        return isNaN(time) ? 0 : time;
+    });
+
+    // Sort ascending (oldest first, newest last)
+    deckTimestamps.sort((a, b) => a - b);
+
+    const totalDecks = deckTimestamps.length;
+    // Find the timestamp boundaries for our percentiles
+    const threshold50 = deckTimestamps[Math.floor(totalDecks * 0.50)]; // 50th percentile
+    const threshold05 = deckTimestamps[Math.floor(totalDecks * 0.95)]; // 95th percentile (Top 5%)
+
+    // --- STEP B: Build the matrix using weighted values ---
+    decks.forEach(deck => {
         // Clean the card names
         const cleanCards = deck.cards.map(c => c.substring(c.indexOf(' ') + 1).trim());
 
-        // Tally how many decks each card appears in overall
+        // --- THE FIX: CRUSH THE HISTORICAL WEIGHT ---
+        let deckWeight = 0.2; // Oldest 50% of decks are only worth 1/5th of a point!
+        
+        const time = deck.upload_date ? new Date(deck.upload_date).getTime() : 0;
+        const validTime = isNaN(time) ? 0 : time;
+
+        if (validTime >= threshold05) {
+            deckWeight = 5.0; // Top 5% most recent decks count for 5x!
+        } else if (validTime >= threshold50) {
+            deckWeight = 1.0; // Top 50% most recent decks count as standard 1x
+        }
+
+        // Tally how many decks each card appears in overall (weighted!)
         cleanCards.forEach(card => {
-            cardFrequencies[card] = (cardFrequencies[card] || 0) + 1;
+            cardFrequencies[card] = (cardFrequencies[card] || 0) + deckWeight;
         });
 
         for (let i = 0; i < cleanCards.length; i++) {
@@ -1446,13 +1475,13 @@ function initSynergyMatrix() {
             for (let j = 0; j < cleanCards.length; j++) {
                 if (i === j) continue; 
                 const cardB = cleanCards[j];
-                synergyMatrix[cardA][cardB] = (synergyMatrix[cardA][cardB] || 0) + 1;
+                
+                // Add the weight instead of just "1"
+                synergyMatrix[cardA][cardB] = (synergyMatrix[cardA][cardB] || 0) + deckWeight;
             }
         }
     });
-    console.log("Synergy Matrix complete!");
 }
-
 // 2. Generate the Deck
 generateDeckBtn.addEventListener('click', () => {
     initSynergyMatrix(); // Ensure matrix is ready
@@ -1471,7 +1500,6 @@ generateDeckBtn.addEventListener('click', () => {
     }, 50);
 });
 
-// 3. The Core Algorithm (Updated with Class Discovery)
 // 3. The Core Algorithm (UPDATED WITH DYNAMIC PERSONALITY & INCREASED VARIANCE)
 function buildOptimizedDeck() {
     let workingDeck = currentSeeds.map(s => ({...s}));
@@ -1572,7 +1600,6 @@ function buildOptimizedDeck() {
 }
 
 // 4. Render the Resulting Deck (Updated with Faction Mana Symbols)
-// --- "PSEUDO-AI" DECK NAMING ENGINE ---
 // --- "PSEUDO-AI" DECK NAMING ENGINE (EXPANDED) ---
 function generateDeckName(deck, isPlant) {
     // Faction-specific adjectives
