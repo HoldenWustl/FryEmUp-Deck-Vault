@@ -1419,15 +1419,16 @@ if (clearSeedsBtn) {
 }
 
 // --- AI DECK BUILDER: SYNERGY ENGINE ---
-
 let synergyMatrix = null;
-let cardFrequencies = null; // NEW: We need to track overall card popularity
+let cardFrequencies = null;
+let cardAverageCopies = null; // NEW: Track the average copies used per deck
 
-// 1. Build the Matrix (UPDATED WITH META-AWARENESS TIME WEIGHTS)
+// 1. Build the Matrix (UPDATED WITH META-AWARENESS TIME WEIGHTS & AVERAGE COPIES)
 function initSynergyMatrix() {
     if (synergyMatrix) return; 
     synergyMatrix = {};
     cardFrequencies = {}; 
+    cardAverageCopies = {}; 
 
     const decks = Object.values(fullDatabase);
 
@@ -1448,10 +1449,7 @@ function initSynergyMatrix() {
 
     // --- STEP B: Build the matrix using weighted values ---
     decks.forEach(deck => {
-        // Clean the card names
-        const cleanCards = deck.cards.map(c => c.substring(c.indexOf(' ') + 1).trim());
-
-        // --- THE FIX: CRUSH THE HISTORICAL WEIGHT ---
+        
         let deckWeight = 0.2; // Oldest 50% of decks are only worth 1/5th of a point!
         
         const time = deck.upload_date ? new Date(deck.upload_date).getTime() : 0;
@@ -1463,11 +1461,39 @@ function initSynergyMatrix() {
             deckWeight = 1.0; // Top 50% most recent decks count as standard 1x
         }
 
-        // Tally how many decks each card appears in overall (weighted!)
-        cleanCards.forEach(card => {
-            cardFrequencies[card] = (cardFrequencies[card] || 0) + deckWeight;
+        // --- THE FIX: Parse BOTH the count and the name ---
+        const parsedCards = deck.cards.map(c => {
+            const firstSpace = c.indexOf(' ');
+            
+            // Handles "x3", "3x", or "3". Strips the "x" and converts to integer.
+            const countStr = c.substring(0, firstSpace).replace(/x/i, '');
+            const count = parseInt(countStr) || 1; 
+            
+            // Everything after the first space is the card name
+            const cardName = c.substring(firstSpace + 1).trim();
+            
+            return { name: cardName, count: count };
         });
 
+        // Map just the names for the synergy loops below
+        const cleanCards = parsedCards.map(pc => pc.name);
+
+        // --- Track Frequencies AND Average Copies ---
+        parsedCards.forEach(card => {
+            // 1. Tally how many decks each card appears in overall
+            cardFrequencies[card.name] = (cardFrequencies[card.name] || 0) + deckWeight;
+
+            // 2. Track total copies played to find the average per deck
+            if (!cardAverageCopies[card.name]) {
+                cardAverageCopies[card.name] = { total: 0, appearances: 0 };
+            }
+            
+            // Multiply by weight so modern deck copy counts influence the average more heavily
+            cardAverageCopies[card.name].total += (card.count * deckWeight);
+            cardAverageCopies[card.name].appearances += deckWeight;
+        });
+
+        // --- STEP C: Build the Synergy Matrix ---
         for (let i = 0; i < cleanCards.length; i++) {
             const cardA = cleanCards[i];
             if (!synergyMatrix[cardA]) synergyMatrix[cardA] = {};
@@ -1482,6 +1508,7 @@ function initSynergyMatrix() {
         }
     });
 }
+
 // 2. Generate the Deck
 generateDeckBtn.addEventListener('click', () => {
     initSynergyMatrix(); // Ensure matrix is ready
@@ -1500,70 +1527,81 @@ generateDeckBtn.addEventListener('click', () => {
     }, 50);
 });
 
-// 3. The Core Algorithm (UPDATED WITH DYNAMIC PERSONALITY & INCREASED VARIANCE)
 function buildOptimizedDeck() {
     let workingDeck = currentSeeds.map(s => ({...s}));
     let workingClasses = new Set(activeClasses);
     let deckFaction = currentFaction;
     let totalCards = workingDeck.reduce((sum, c) => sum + c.count, 0);
 
-    // --- THE FIX: DYNAMIC DECK PERSONALITY ---
-    // Randomize the weights for this specific run!
-    // rawWeight will be anywhere from 0.25 (Heavy Combo) to 0.55 (Heavy Goodstuff)
     const rawWeight = 0.25 + (Math.random() * 0.30);
     const affinityWeight = 1.0 - rawWeight;
     
-    // (Optional) Log it so you can see what kind of AI is building your deck!
-    console.log(`AI Personality for this build -> Raw (Goodstuff): ${Math.round(rawWeight * 100)}% | Affinity (Combo): ${Math.round(affinityWeight * 100)}%`);
-
     while (totalCards < 40) {
         let bestCard = null;
         let bestScore = -1;
 
-        const forceSecondClass = workingClasses.size === 1;
+        // --- NEW: Identify Orphans ---
+        // An orphan is a card with 1 copy that usually has an average > 1.5 in the meta
+        const orphans = workingDeck.filter(c => {
+            const stats = cardAverageCopies[c.name];
+            const avg = stats ? (stats.total / stats.appearances) : 3;
+            return c.count === 1 && avg > 1.5;
+        });
 
-        Object.keys(cardDatabase).forEach(candidateName => {
+        // --- STEP 1: Decide the "Search Pool" ---
+        // If we have orphans, we ONLY look at those orphans to move them to x2.
+        // This effectively "closes the bridge" before opening new ones.
+        const candidatePool = (orphans.length > 0) 
+            ? orphans.map(o => o.name) 
+            : Object.keys(cardDatabase);
+
+        candidatePool.forEach(candidateName => {
             const candidateData = cardDatabase[candidateName];
             const candidateClass = candidateData.Class;
             const candidateFaction = plantClasses.has(candidateClass) ? "Plant" : "Zombie";
 
+            // Basic filters
             if (candidateFaction !== deckFaction) return; 
             if (!workingClasses.has(candidateClass) && workingClasses.size >= 2) return; 
-            if (forceSecondClass && workingClasses.has(candidateClass)) return;
+            if (workingClasses.size === 1 && workingClasses.has(candidateClass) && orphans.length === 0 && totalCards > 30) {
+                // Emergency check to ensure we pick a second class if we are running out of room
+            }
 
             const existingCopy = workingDeck.find(c => c.name === candidateName);
             const currentCopies = existingCopy ? existingCopy.count : 0;
             if (currentCopies >= 4) return; 
 
-            // Base Synergy Calculation
             let score = 0;
+            // Synergy Loop
             workingDeck.forEach(deckCard => {
                 if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
-                    
                     const coOccurrences = synergyMatrix[candidateName][deckCard.name];
                     const candidateTotalPlays = cardFrequencies[candidateName] || 1;
-
                     let rawSynergy = coOccurrences;
                     let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays;
-
-                    // Blend them together using our dynamic personality weights!
                     let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
-
+                    
                     const isOriginalSeed = currentSeeds.some(s => s.name === deckCard.name);
-                    const seedMultiplier = isOriginalSeed ? 3 : 1;
-
-                    score += blendedSynergy * deckCard.count * seedMultiplier;
+                    score += blendedSynergy * deckCard.count * (isOriginalSeed ? 3 : 1);
                 }
             });
 
             if (score === 0) score = 0.1;
 
-            if (currentCopies > 0) score *= (1 + (currentCopies * 0.50));
+            // --- REFINED SCALING ---
+            let avgCopies = 3; 
+            if (cardAverageCopies && cardAverageCopies[candidateName]) {
+                avgCopies = cardAverageCopies[candidateName].total / cardAverageCopies[candidateName].appearances;
+            }
 
-            // --- THE FIX: INCREASED TEMPERATURE ---
-            // Bumped from +/- 10% to +/- 15% for just a little more chaos
-            const variance = 0.85 + (Math.random() * 0.3);
-            score *= variance;
+            if (currentCopies >= Math.round(avgCopies)) {
+                score *= 0.01; // Meta Cap
+            } else if (currentCopies > 1) {
+                score *= 1.5;  // Consistency bump for x3 and x4
+            }
+
+            // Temperature / Variance
+            score *= (0.85 + (Math.random() * 0.3));
 
             if (score > bestScore) {
                 bestScore = score;
@@ -1571,31 +1609,24 @@ function buildOptimizedDeck() {
             }
         });
 
-        // Add the winning card (Logic stays exactly the same)
         if (bestCard) {
             const existing = workingDeck.find(c => c.name === bestCard);
             if (existing) {
                 existing.count++;
-                totalCards++;
             } else {
-                const spaceLeft = 40 - totalCards;
-                const copiesToAdd = Math.min(3, spaceLeft);
-
                 workingDeck.push({
                     name: bestCard,
-                    count: copiesToAdd,
+                    count: 1, 
                     class: cardDatabase[bestCard].Class,
                     cost: cardDatabase[bestCard].Cost 
                 });
                 workingClasses.add(cardDatabase[bestCard].Class);
-                totalCards += copiesToAdd;
             }
+            totalCards++;
         } else {
-            console.warn("Algorithm stalled! Not enough valid cards.");
-            break;
+            break; 
         }
     }
-
     return workingDeck;
 }
 
