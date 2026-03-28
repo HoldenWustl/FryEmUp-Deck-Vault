@@ -3551,8 +3551,8 @@
         "Set": "Galactic",
         "Set #": 2.0
     },
-    "Cukoo_Zombie": {
-        "Name": "Cukoo_Zombie",
+    "Cuckoo_Zombie": {
+        "Name": "Cuckoo_Zombie",
         "Class": "Crazy",
         "Cost": 2,
         "Strength": 4.0,

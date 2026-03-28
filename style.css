@@ -186,7 +186,10 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .video-link:hover { color: white; text-decoration: underline; }
 
-.video-dropdown { margin-bottom: 15px; }
+.video-dropdown {
+    flex: 1; 
+    max-width: 60%; /* Adjust this if your video preview needs more/less room */
+}
 .video-dropdown summary {
     cursor: pointer;
     color: var(--text-secondary);
@@ -198,37 +201,8 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .video-dropdown summary:hover { color: var(--accent); }
 
-.video-preview {
-    margin-top: 10px;
-    border-radius: 6px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid #3a4047;
-}
 
-.video-preview img {
-    width: 100%;
-    height: auto;
-    display: block;
-    opacity: 0.85;
-    transition: opacity 0.2s;
-}
-.video-preview:hover img { opacity: 1; }
 
-.video-title-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    font-size: 0.8rem;
-    padding: 8px;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
 /* =========================================
    MODALS (INFO & STATS)
@@ -1037,4 +1011,330 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         justify-content: space-between; /* Spread buttons out on mobile */
         box-sizing: border-box;
     }
+}
+/* --- Visual Deck Modal --- */
+.deck-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.deck-modal-content {
+    background: #1a1a1a; /* Match your card background */
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh; /* Never taller than 85% of the screen */
+    border-radius: 12px;
+    padding: 25px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #333;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 15px; right: 20px;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #ccc;
+    transition: color 0.2s;
+}
+
+.close-modal-btn:hover {
+    color: white;
+}
+
+
+
+.visual-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    /* This is the secret: shadow follows the pixels, not the box! */
+    filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* --- Card Hover Effect --- */
+.visual-card:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.visual-card:hover img {
+    filter: drop-shadow(0 8px 15px rgba(0, 180, 216, 0.6)); /* Cyan glow on hover */
+}
+
+/* Ensure the badge stays sharp during the hover zoom */
+.card-quantity {
+    z-index: 11;
+}
+
+.card-quantity {
+    position: absolute;
+    bottom: 8px;
+    left: 6px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 3px 7px;
+    border-radius: 4px;
+    /* Clean, matching font style */
+    font-family: inherit; 
+    font-size: 0.75rem;
+    font-weight: 600; 
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+}
+
+
+/* Clean text-only hover effect */
+.view-visual-btn:hover {
+    background: transparent !important; /* Enforce no background on hover */
+    color: var(--accent);
+    transform: none !important; /* Stops any inherited button popping/scaling */
+}
+
+/* Ensure the modal is completely hidden by default */
+.deck-modal.hidden {
+    display: none !important;
+}
+
+
+/* Match the video dropdown summary style */
+/* --- Action Controls Wrapper --- */
+.deck-controls-wrapper {
+    position: relative; /* Acts as the anchor for the absolute positioned button */
+    width: 100%;
+}
+
+/* Ensure the video dropdown can take the full width when opened */
+.video-dropdown {
+    width: 100%;
+    display: block;
+}
+
+/* Position the Visual Deck details tag exactly on the right side of the same line */
+.visual-deck-details {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+/* --- The Visual Deck Summary Button --- */
+.view-visual-btn {
+    cursor: pointer;
+    color: var(--text-secondary, #888);
+    font-size: 0.9rem;
+    font-weight: bold;
+    user-select: none;
+    transition: color 0.2s;
+    outline: none;
+    background: transparent !important; /* Forces no background */
+    border: none !important;
+    padding: 0;
+    margin: 0;
+}
+
+
+/* --- Visual Card Grid (4 Columns, Uniform Images) --- */
+
+
+.visual-card {
+    position: relative;
+    width: 100%;
+    /* We set a min-height so the 'floor' is consistent even if an image is tiny */
+    min-height: 100px; 
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Pushes the image to the bottom of the container */
+    transition: transform 0.2s ease;
+}
+
+.visual-card img {
+    width: 100%;
+    max-height: 140px; /* Caps the height so more rows fit on screen */
+    object-fit: contain;
+    filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.5));
+    display: block;
+}
+
+/* Ensure the quantity badge stays in the right spot */
+.card-quantity {
+    position: absolute;
+    bottom: 10px; /* Overlayed on the bottom of the image */
+    left: 8px;
+    background: rgba(0, 0, 0, 0.85); /* Deep dark background */
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle edge to make it pop */
+    z-index: 5;
+    pointer-events: none; /* Clicks pass through to the image */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Give the video container some breathing room from the buttons */
+.video-preview {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+/* The link container needs to handle the hover effects and boundaries */
+.video-preview a {
+    position: relative;
+    display: block;
+    width: 100%;
+    border-radius: 8px; /* Smooth rounded corners */
+    overflow: hidden; /* Keeps the image and overlay nicely inside the rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none; /* Strip any default link underlines */
+}
+
+/* Make it pop up slightly when hovered */
+.video-preview a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Force the thumbnail to a perfect 16:9 YouTube ratio */
+.video-preview img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover; /* Prevents squishing */
+    display: block;
+}
+
+/* MAGIC TRICK: CSS-generated Play Button right in the center */
+.video-preview a::after {
+    content: '▶';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    transition: color 0.2s, transform 0.2s;
+    pointer-events: none; /* Let clicks pass right through to the link */
+}
+
+/* Make the play button react to hovering */
+.video-preview a:hover::after {
+    color: #fff;
+    transform: translate(-50%, -50%) scale(1.15); /* Slight pop effect */
+}
+
+/* Sleek gradient overlay for the text */
+.video-title-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    /* Gradient fades smoothly from transparent to dark */
+    background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.9) 100%);
+    padding: 25px 12px 10px 12px; 
+    color: #f1f1f1;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Neatly adds "..." if the title is too long */
+    box-sizing: border-box;
+}
+
+/* Ensure the card itself is the anchor */
+.deck-card {
+    position: relative;
+    padding: 20px; /* Adjust this to match your actual card padding */
+    overflow: hidden; /* This clips the image so it doesn't spill out of the card corners */
+}
+
+/* The video box: Negative margins pull it to the very edge of the card */
+.video-preview {
+   
+    margin-top: 10px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* Helper class to hide the video initially */
+.video-preview.hidden {
+    display: none;
+}
+
+.video-preview a {
+    display: block;
+    width: 100%;
+}
+
+.video-preview img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    /* Optional: Remove the border-radius if you want it to look like a clean "stripe" across the card */
+    border-radius: 0; 
+}
+.deck-controls-wrapper {
+    position: relative;
+    height: 24px; /* Matches the height of your summary text */
+    margin-bottom: 24px;
+}
+
+.visual-deck-details {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+/* --- Modal Title Styling --- */
+#modalDeckTitle {
+    color: var(--accent, #00b4d8);
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    /* Subtle glow effect behind the title */
+    text-shadow: 0 0 15px rgba(0, 180, 216, 0.4);
+    position: relative;
+    padding-bottom: 10px;
+}
+
+/* A little decorative line under the title */
+#modalDeckTitle::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 25%;
+    width: 50%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* --- The Grid Spacing --- */
+.visual-deck-grid {
+    overflow-y: auto;
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 10px;
+    align-items: end;
+    /* Custom Scrollbar for a cleaner look */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) #222;
 }

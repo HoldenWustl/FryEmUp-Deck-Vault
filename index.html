@@ -287,7 +287,7 @@
 
         <section id="crafterView" class="hidden">
             <div class="crafter-header">
-                <h2>AI Deck Builder 2.0</h2>
+                <h2>AI Deck Builder 2.1</h2>
                 <p>Select up to 4 different seed cards. The engine will build the rest of your deck!</p>
             </div>
 
@@ -334,6 +334,7 @@
                         banners so the OCR wouldn't hallucinate.</li>
                     <li><strong>The Videos:</strong> Matched directly to FryEmUp's YouTube channels using script
                         automation to pull the exact links and titles.</li>
+                    <li><strong>The Images:</strong> Pulled from the PvZ Fandom Wiki infoboxes.</li>
                     <li><strong>The Card Data:</strong> To make all the beautiful stats work, the base game data was
                         sourced from the <a href="https://github.com/dannyguy253/PvZHeroes-Database" target="_blank"
                             style="color: #58a6ff; text-decoration: none;">dannyguy253/PvZHeroes-Database</a> repository
@@ -356,6 +357,14 @@
             </div>
         </div>
     </div>
+    <div id="deckVisualModal" class="deck-modal hidden">
+    <div class="deck-modal-content">
+        <span class="close-modal-btn">&times;</span>
+        <h2 id="modalDeckTitle">Deck Name</h2>
+        <div id="modalDeckGrid" class="visual-deck-grid">
+            </div>
+    </div>
+</div>
     <script src="app.js"></script>
 </body>
 

@@ -197,16 +197,30 @@ function handleRouting() {
                     <h3 class="deck-title">${deckInfo.name}</h3>
                     <span class="deck-date">${dateStr}</span>
                 </div>
-                
-                <details class="video-dropdown">
-                    <summary>View Video</summary>
-                    <div class="video-preview">
-                        <a href="${deckInfo.youtube_url}" target="_blank" title="${deckInfo.youtube_title}">
-                            <img src="${thumbnailUrl}" alt="Video Thumbnail" loading="lazy">
-                            <div class="video-title-overlay">${deckInfo.youtube_title}</div>
-                        </a>
-                    </div>
-                </details>
+               
+           <div class="deck-controls-wrapper">
+    
+    <details class="video-dropdown" 
+             ontoggle="this.closest('.deck-card').querySelector('.video-preview').classList.toggle('hidden', !this.open)">
+        <summary>View Video</summary>
+    </details>
+    
+    <details class="visual-deck-details">
+        <summary class="view-visual-btn" 
+                 data-title="${deckInfo.name}" 
+                 data-cards="${encodeURIComponent(JSON.stringify(deckInfo.cards))}">
+            View Visual Deck
+        </summary>
+    </details>
+
+</div>
+
+<div class="video-preview hidden">
+    <a href="${deckInfo.youtube_url}" target="_blank" title="${deckInfo.youtube_title}">
+        <img src="${thumbnailUrl}" alt="Video Thumbnail" loading="lazy">
+        <div class="video-title-overlay">${deckInfo.youtube_title}</div>
+    </a>
+</div>
 
                 ${cardsHtml}
             `;
@@ -712,6 +726,10 @@ crafterBtn.addEventListener('click', () => {
     // Redraw smoothly
     charts.topCards.update();
 };
+const currentTopCardsFilter = document.getElementById('topCardsFilter').value;
+if (currentTopCardsFilter !== 'all') {
+    window.applyTopCardsFilter(currentTopCardsFilter);
+}
         // --- CHART 2: Deck Presence ---
         const ctx2 = document.getElementById('deckPresenceChart').getContext('2d');
         charts.deckPresence = new Chart(ctx2, {
@@ -1709,9 +1727,11 @@ let currentClipboardText = "";
 function renderGeneratedDeck(deck) {
     const resultsContainer = document.getElementById('generatedDeckList');
     const title = document.getElementById('generatedDeckTitle');
-    const copyBtn = document.getElementById('copyDeckBtn'); // Grab the new button
+    const copyBtn = document.getElementById('copyDeckBtn');
     
+    // Clean out previous results and apply our perfect grid CSS class!
     resultsContainer.innerHTML = '';
+    resultsContainer.className = 'visual-deck-grid'; // Reuses the modal grid layout!
     title.classList.remove('hidden');
 
     // Sort by Cost, then Alphabetical
@@ -1740,28 +1760,37 @@ function renderGeneratedDeck(deck) {
     // --- START BUILDING THE CLIPBOARD STRING ---
     currentClipboardText = `Deck: ${aiDeckName}\nHero: ${heroName}\n\n`;
 
-    const manaSymbol = isPlant ? '☀️' : '🧠';
-    const manaColor = isPlant ? '#e3c800' : '#b259db';
-
+    // Build the visual cards
     deck.forEach(card => {
-        const div = document.createElement('div');
-        div.className = 'generated-card-item';
-        div.style.padding = '10px';
-        div.style.background = 'var(--card-bg)';
-        div.style.border = '1px solid rgba(255, 255, 255, 0.05)';
-        div.style.borderRadius = '6px';
-        div.style.marginBottom = '5px';
-        div.style.display = 'flex';
-        div.style.justifyContent = 'space-between';
+        // Handle names safely (clipboard wants spaces, image paths want underscores)
+        const displayName = card.name.replace(/_/g, ' '); 
+        const dbName = displayName.replace(/ /g, '_'); 
 
-        const displayName = card.name.replace(/_/g, ' ');
-        const cost = cardDatabase[card.name].Cost;
+        // Create the card container
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'visual-card'; // Reuses the hover and drop-shadow styling
 
-        div.innerHTML = `
-            <span><span style="color: ${manaColor}; font-weight: bold;">${cost}${manaSymbol}</span> ${displayName}</span>
-            <span style="font-weight: bold; color: var(--accent);">x${card.count}</span>
-        `;
-        resultsContainer.appendChild(div);
+        // Create the image
+        const img = document.createElement('img');
+        img.src = `card_images/${dbName}.png`;
+        img.alt = displayName;
+        img.title = displayName; // Shows the name on hover
+        
+        // Fallback for .webp
+        img.onerror = function() {
+            this.onerror = null; 
+            this.src = `card_images/${dbName}.webp`;
+        };
+
+        // Create the sleek bottom-left badge
+        const badge = document.createElement('div');
+        badge.className = 'card-quantity';
+        badge.textContent = `x${card.count}`;
+
+        // Put it all together
+        cardDiv.appendChild(img);
+        cardDiv.appendChild(badge);
+        resultsContainer.appendChild(cardDiv);
 
         // --- ADD CARD TO CLIPBOARD STRING ---
         currentClipboardText += `${card.count}x ${displayName}\n`;
@@ -1809,4 +1838,81 @@ if (typeof backBtn !== 'undefined') {
         window.location.hash = ''; // Clearing the hash triggers the default Home UI
     });
 }
+});
+
+// --- Modal Elements ---
+const modal = document.getElementById('deckVisualModal');
+const modalTitle = document.getElementById('modalDeckTitle');
+const modalGrid = document.getElementById('modalDeckGrid');
+const closeModalBtn = document.querySelector('.close-modal-btn');
+
+// --- Event Delegation for "View Visual Deck" buttons ---
+// We attach the listener to the whole grid instead of 1700 individual buttons
+document.getElementById('deckGrid').addEventListener('click', function(e) {
+    if (e.target.classList.contains('view-visual-btn')) {
+        e.preventDefault();
+        const title = e.target.getAttribute('data-title');
+        const cardsArray = JSON.parse(decodeURIComponent(e.target.getAttribute('data-cards')));
+        
+        openVisualModal(title, cardsArray);
+    }
+});
+
+function openVisualModal(title, cardsArray) {
+    modalTitle.textContent = title;
+    modalGrid.innerHTML = ''; // Clear previous deck
+
+    // Loop directly through the strings in your array
+    cardsArray.forEach(cardString => {
+        // Regex magic: It looks for "x" followed by numbers, a space, then the name
+        const match = cardString.trim().match(/^x(\d+)\s+(.+)$/i);
+        
+        let count = 1;
+        let rawName = cardString; // Fallback just in case
+
+        if (match) {
+            count = parseInt(match[1], 10); // Extracts the '2'
+            rawName = match[2];             // Extracts 'Hot Lava'
+        }
+
+        const displayName = rawName.replace(/_/g, ' ');
+        const dbName = displayName.replace(/ /g, '_');
+
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'visual-card';
+
+        const img = document.createElement('img');
+        img.src = `card_images/${dbName}.png`;
+        img.alt = displayName;
+        img.title = displayName;
+        img.style.objectFit = 'contain';
+        
+        // The magic fallback: if .png fails, instantly try .webp
+        img.onerror = function() {
+            this.onerror = null; 
+            this.src = `card_images/${dbName}.webp`;
+        };
+
+        const badge = document.createElement('div');
+        badge.className = 'card-quantity';
+        badge.textContent = `x${count}`;
+
+        cardDiv.appendChild(img);
+        cardDiv.appendChild(badge);
+        modalGrid.appendChild(cardDiv);
+    });
+
+    // Show the modal
+    modal.classList.remove('hidden');
+}
+// --- Close Modal Logic ---
+closeModalBtn.addEventListener('click', () => {
+    modal.classList.add('hidden');
+});
+
+// Close modal if user clicks the dark background outside the content
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+        modal.classList.add('hidden');
+    }
 });
