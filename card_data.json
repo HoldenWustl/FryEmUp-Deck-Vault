@@ -371,8 +371,8 @@
         "Set": "Basic",
         "Set #": 1.0
     },
-    "Button Mushroom": {
-        "Name": "Button Mushroom",
+    "Button_Mushroom": {
+        "Name": "Button_Mushroom",
         "Class": "Kabloom",
         "Cost": 1,
         "Strength": 1.0,
@@ -1643,8 +1643,8 @@
         "Set": "Event",
         "Set #": null
     },
-    "Pear Pal": {
-        "Name": "Pear Pal",
+    "Pear_Pal": {
+        "Name": "Pear_Pal",
         "Class": "Smarty",
         "Cost": 2,
         "Strength": 2.0,
@@ -2879,8 +2879,8 @@
         "Set": "Premium",
         "Set #": 1.0
     },
-    "Weenie Beanie": {
-        "Name": "Weenie Beanie",
+    "Weenie_Beanie": {
+        "Name": "Weenie_Beanie",
         "Class": "Smarty",
         "Cost": 1,
         "Strength": 1.0,
@@ -3455,8 +3455,8 @@
         "Set": "Premium",
         "Set #": 1.0
     },
-    "Copter Commando": {
-        "Name": "Copter Commando",
+    "Copter_Commando": {
+        "Name": "Copter_Commando",
         "Class": "Brainy",
         "Cost": 5,
         "Strength": 6.0,
@@ -4451,8 +4451,8 @@
         "Set": "Premium",
         "Set #": 1.0
     },
-    "Knight of the Living Dead": {
-        "Name": "Knight of the Living Dead",
+    "Knight_of_the_Living_Dead": {
+        "Name": "Knight_of_the_Living_Dead",
         "Class": "Hearty",
         "Cost": 7,
         "Strength": 5.0,
@@ -5087,8 +5087,8 @@
         "Set": "Basic",
         "Set #": 1.0
     },
-    "Screen Door Zombie": {
-        "Name": "Screen Door Zombie",
+    "Screen_Door_Zombie": {
+        "Name": "Screen_Door_Zombie",
         "Class": "Hearty",
         "Cost": 5,
         "Strength": 4.0,
@@ -5183,8 +5183,8 @@
         "Set": "Event",
         "Set #": null
     },
-    "Snorkel Zombie": {
-        "Name": "Snorkel Zombie",
+    "Snorkel_Zombie": {
+        "Name": "Snorkel_Zombie",
         "Class": "Beastly",
         "Cost": 1,
         "Strength": 2.0,
@@ -5315,8 +5315,8 @@
         "Set": "Galactic",
         "Set #": 2.0
     },
-    "Surfer Zombie": {
-        "Name": "Surfer Zombie",
+    "Surfer_Zombie": {
+        "Name": "Surfer_Zombie",
         "Class": "Beastly",
         "Cost": 4,
         "Strength": 4.0,
@@ -5663,8 +5663,8 @@
         "Set": "Premium",
         "Set #": 1.0
     },
-    "Vengeful Cyborg": {
-        "Name": "Vengeful Cyborg",
+    "Vengeful_Cyborg": {
+        "Name": "Vengeful_Cyborg",
         "Class": "Beastly",
         "Cost": 5,
         "Strength": 5.0,
@@ -5699,8 +5699,8 @@
         "Set": "Premium",
         "Set #": 1.0
     },
-    "Walrus Rider": {
-        "Name": "Walrus Rider",
+    "Walrus_Rider": {
+        "Name": "Walrus_Rider",
         "Class": "Sneaky",
         "Cost": 5,
         "Strength": 3.0,
