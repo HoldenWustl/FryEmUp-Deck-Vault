@@ -2156,7 +2156,7 @@ function handleHlGuess(clickedSide) {
 
     const countLeft = deckCounts[currentCardLeft];
     const countRight = deckCounts[currentCardRight];
-    
+
     // Trigger the satisfying tick-up effect over 800ms
     animateValue(document.getElementById('hlCountLeft'), 0, countLeft, 800);
     animateValue(document.getElementById('hlCountRight'), 0, countRight, 800);
@@ -2259,9 +2259,9 @@ function startHigherLower() {
 
 
 // 6. Event Listeners
-hlCardLeftEl.addEventListener('click', () => handleHlGuess('left'));
-hlCardRightEl.addEventListener('click', () => handleHlGuess('right'));
-document.getElementById('hlRestartBtn').addEventListener('click', startHigherLower);
+hlCardLeftEl.onclick = () => handleHlGuess('left');
+hlCardRightEl.onclick = () => handleHlGuess('right');
+document.getElementById('hlRestartBtn').onclick = startHigherLower;
 
 // Initialize the game
 startHigherLower();
@@ -2507,6 +2507,7 @@ function startTrivia() {
     triviaIsGameOver = false;
     triviaIsAnimating = false;
     triviaScore = 0;
+    
     triviaScoreEl.textContent = triviaScore;
     triviaGameOverEl.style.display = 'none';
     triviaGameArea.classList.remove('trivia-fade-out');
