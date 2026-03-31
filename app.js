@@ -1946,7 +1946,7 @@ function renderGames() {
     // --- State Helper Functions ---
    // --- State Helper Functions ---
     function setupUnsolvedState() {
-        canvas.style.filter = 'blur(20px) grayscale(100%)'; 
+        canvas.style.filter = 'blur(18px) grayscale(100%)'; 
         inputArea.style.display = 'block';
         feedbackEl.textContent = '';
         updateHintsDisplay();
