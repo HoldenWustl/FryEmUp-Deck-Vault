@@ -1591,9 +1591,9 @@ function buildOptimizedDeck() {
 
                 if (rarity === "Super-Rare" || rarity === "Event") {
                     // The Soft Ceiling: Only allow a BRAND NEW expensive card if we have 
-                    // enough budget room (17 or fewer) to potentially make it a 3x or 4x.
+                    // enough budget room (13 or fewer) to potentially make it a 3x or 4x.
                     // If it's already in the deck (currentCopies > 0), let it upgrade.
-                    if (currentCopies === 0 && expensiveCount > 17) return; 
+                    if (currentCopies === 0 && expensiveCount > 13) return; 
                 }
             }
 
