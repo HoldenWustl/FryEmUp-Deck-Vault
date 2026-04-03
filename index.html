@@ -15,7 +15,7 @@
             <h1>PvZH Deck Vault</h1>
             <p>Browsing <span id="deckCount" class="highlight">...</span> <span id="randomAdjective">glorious</span> PvZ
                 Heroes decks <button id="infoBtn" class="info-btn">?</button></p>
-            <p class="last-updated">Last updated: Mar 28, 2026</p>
+            <p class="last-updated">Last updated: Apr 2, 2026</p>
 
             <div id="controls" class="controls-container">
                 <div id="searchWrapper">
@@ -288,7 +288,7 @@
 
         <section id="crafterView" class="hidden">
             <div class="crafter-header">
-                <h2>AI Deck Builder 2.1</h2>
+                <h2>Deck Builder 2.0</h2>
                 <p>Select up to 4 different seed cards. The engine will build the rest of your deck!</p>
             </div>
 
@@ -305,9 +305,14 @@
             </div>
 
             <div class="crafter-controls">
-                <button id="generateDeckBtn" class="generate-btn" disabled>Generate Deck</button>
-                <button id="clearSeedsBtn" class="clear-btn">Clear All</button>
-            </div>
+    <button id="generateDeckBtn" class="generate-btn" disabled>Generate Deck</button>
+    <button id="clearSeedsBtn" class="clear-btn">Clear All</button>
+    
+    <div style="display: flex; align-items: center; margin-left: 15px; gap: 8px;">
+        <input type="checkbox" id="budgetToggle" style="cursor: pointer;">
+        <label for="budgetToggle" style="cursor: pointer; font-weight: bold;">Budget Mode</label>
+    </div>
+</div>
 
             <div class="crafter-results-container">
                 <h3 id="generatedDeckTitle" class="hidden">Generated Deck</h3>

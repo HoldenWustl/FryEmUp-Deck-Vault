@@ -1461,7 +1461,7 @@ function initSynergyMatrix() {
         const validTime = isNaN(time) ? 0 : time;
 
         if (validTime >= threshold05) {
-            deckWeight = 5.0; // Top 5% most recent decks count for 5x!
+            deckWeight = 5.0; // Top 5% most recent decks count for 5.0x!
         } else if (validTime >= threshold50) {
             deckWeight = 1.0; // Top 50% most recent decks count as standard 1x
         }
@@ -1528,7 +1528,7 @@ generateDeckBtn.addEventListener('click', () => {
         renderGeneratedDeck(finalDeck);
         
         generateDeckBtn.disabled = false;
-        generateDeckBtn.innerText = "Generate Synergy Deck";
+        generateDeckBtn.innerText = "Generate Deck";
     }, 50);
 });
 
@@ -1536,76 +1536,109 @@ function buildOptimizedDeck() {
     let workingDeck = currentSeeds.map(s => ({...s}));
     let workingClasses = new Set(activeClasses);
     let deckFaction = currentFaction;
-    let totalCards = workingDeck.reduce((sum, c) => sum + c.count, 0);
-
+    
     const rawWeight = 0.25 + (Math.random() * 0.30);
     const affinityWeight = 1.0 - rawWeight;
     
-    while (totalCards < 40) {
+    // Check if Budget Mode is active
+    const budgetToggle = document.getElementById('budgetToggle');
+    const isBudget = budgetToggle ? budgetToggle.checked : false;
+    
+    while (true) {
+        // Recalculate totals at the start of every loop
+        let totalCards = workingDeck.reduce((sum, c) => sum + c.count, 0);
+        if (totalCards >= 40) break;
+
+        // Calculate current budget consumption
+        let expensiveCount = workingDeck.reduce((sum, c) => {
+            if (!cardDatabase[c.name]) return sum;
+            const r = cardDatabase[c.name].Rarity;
+            return (r === "Super-Rare" || r === "Event") ? sum + c.count : sum;
+        }, 0);
+
         let bestCard = null;
         let bestScore = -1;
 
-        // --- NEW: Identify Orphans ---
-        // An orphan is a card with 1 copy that usually has an average > 1.5 in the meta
-        const orphans = workingDeck.filter(c => {
-            const stats = cardAverageCopies[c.name];
-            const avg = stats ? (stats.total / stats.appearances) : 3;
-            return c.count === 1 && avg > 1.5;
-        });
+        let candidatePool = Object.keys(cardDatabase);
+        
+        // "Closing Door" Logic to prevent late-game orphans
+        const slotsLeft = 40 - totalCards;
+        const currentOrphans = workingDeck.filter(c => c.count === 1).length;
 
-        // --- STEP 1: Decide the "Search Pool" ---
-        // If we have orphans, we ONLY look at those orphans to move them to x2.
-        // This effectively "closes the bridge" before opening new ones.
-        const candidatePool = (orphans.length > 0) 
-            ? orphans.map(o => o.name) 
-            : Object.keys(cardDatabase);
+        if (slotsLeft <= currentOrphans || slotsLeft === 1) {
+            candidatePool = workingDeck.map(c => c.name);
+        }
 
         candidatePool.forEach(candidateName => {
             const candidateData = cardDatabase[candidateName];
             const candidateClass = candidateData.Class;
             const candidateFaction = plantClasses.has(candidateClass) ? "Plant" : "Zombie";
 
-            // Basic filters
+            // Basic game logic filters
             if (candidateFaction !== deckFaction) return; 
             if (!workingClasses.has(candidateClass) && workingClasses.size >= 2) return; 
-            if (workingClasses.size === 1 && workingClasses.has(candidateClass) && orphans.length === 0 && totalCards > 30) {
-                // Emergency check to ensure we pick a second class if we are running out of room
-            }
 
             const existingCopy = workingDeck.find(c => c.name === candidateName);
             const currentCopies = existingCopy ? existingCopy.count : 0;
             if (currentCopies >= 4) return; 
 
+            // --- NEW: BUDGET FILTERS ---
+            if (isBudget) {
+                const rarity = candidateData.Rarity;
+                if (rarity === "Legendary") return; // Hard ban on Legendaries
+
+                if (rarity === "Super-Rare" || rarity === "Event") {
+                    // The Soft Ceiling: Only allow a BRAND NEW expensive card if we have 
+                    // enough budget room (17 or fewer) to potentially make it a 3x or 4x.
+                    // If it's already in the deck (currentCopies > 0), let it upgrade.
+                    if (currentCopies === 0 && expensiveCount > 17) return; 
+                }
+            }
+
             let score = 0;
-            // Synergy Loop
+
+            // Core Synergy Loop
             workingDeck.forEach(deckCard => {
                 if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
                     const coOccurrences = synergyMatrix[candidateName][deckCard.name];
                     const candidateTotalPlays = cardFrequencies[candidateName] || 1;
+                    
                     let rawSynergy = coOccurrences;
                     let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays;
                     let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
                     
                     const isOriginalSeed = currentSeeds.some(s => s.name === deckCard.name);
-                    score += blendedSynergy * deckCard.count * (isOriginalSeed ? 3 : 1);
+
+                    let classModifier = 1.0;
+                    if (cardDatabase[candidateName].Class !== cardDatabase[deckCard.name].Class) {
+                        classModifier = 3.5; 
+                    }
+                    
+                    score += (blendedSynergy * classModifier) * deckCard.count * (isOriginalSeed ? 3 : 1);
                 }
             });
 
             if (score === 0) score = 0.1;
 
-            // --- REFINED SCALING ---
+            // Dynamic Consistency & Meta Scaling
             let avgCopies = 3; 
             if (cardAverageCopies && cardAverageCopies[candidateName]) {
                 avgCopies = cardAverageCopies[candidateName].total / cardAverageCopies[candidateName].appearances;
             }
 
-            if (currentCopies >= Math.round(avgCopies)) {
-                score *= 0.01; // Meta Cap
-            } else if (currentCopies > 1) {
-                score *= 1.5;  // Consistency bump for x3 and x4
+            let consistencyMultiplier = 1.0;
+
+            if (currentCopies === 1) {
+                consistencyMultiplier = 75.0; 
+            } else if (currentCopies === 2) {
+                consistencyMultiplier = 1.5; 
             }
 
-            // Temperature / Variance
+            if (currentCopies >= Math.round(avgCopies)) {
+                consistencyMultiplier *= 0.5; 
+            }
+
+            score *= consistencyMultiplier;
             score *= (0.85 + (Math.random() * 0.3));
 
             if (score > bestScore) {
@@ -1627,7 +1660,6 @@ function buildOptimizedDeck() {
                 });
                 workingClasses.add(cardDatabase[bestCard].Class);
             }
-            totalCards++;
         } else {
             break; 
         }
