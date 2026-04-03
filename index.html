@@ -331,28 +331,22 @@
     <div class="games-grid" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 1100px; margin: 0 auto;">
         
     <div id="silhouetteGameCard" class="game-container" style="background: #222; padding: 20px; border-radius: 12px; text-align: center; flex: 1 1 calc(50% - 20px); min-width: 320px; max-width: 500px; box-sizing: border-box;">
-        <h3>Daily Silhouette</h3>
-        <p id="silhouetteInstructions">Guess the card based on its outline.</p>
-        
-        <div class="image-wrapper" style="margin: 20px auto; height: 250px; width: 200px; display: flex; justify-content: center; align-items: center; position: relative;">
-            <canvas id="silhouetteCanvas" width="200" height="250" style="transition: filter 0.8s ease;"></canvas>
-        </div>
-
-        <div id="silhouetteInputArea" style="position: relative;">
-            <input type="text" id="silhouetteGuess" placeholder="Type card name..." autocomplete="off" style="width: 80%; padding: 8px; margin-bottom: 10px;">
-            <ul id="silhouetteSuggestions" class="suggestions-dropdown" style="display: none; position: absolute; left: 10%; width: 80%; text-align: left; z-index: 100; background: #333; border: 1px solid #555; list-style-type: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto;"></ul>
-            <br>
-            <button id="silhouetteSubmitBtn" class="generate-btn">Guess</button>
-        </div>
-
-        <p id="silhouetteFeedback" style="font-weight: bold; margin-top: 10px;"></p>
-        
-        <div id="silhouetteHints" style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: left; background: #333; padding: 10px; border-radius: 8px; display: none;">
-            <p id="hint1" class="hidden"><strong>Hint 1:</strong> <span id="hint1Text"></span></p>
-            <p id="hint2" class="hidden"><strong>Hint 2:</strong> <span id="hint2Text"></span></p>
-            <p id="hint3" class="hidden"><strong>Hint 3:</strong> <span id="hint3Text"></span></p>
-        </div>
+    <h3>Daily Silhouette</h3>
+    <p id="silhouetteInstructions">Guess the card based on its outline.</p>
+    
+    <div class="image-wrapper" style="margin: 20px auto; height: 250px; width: 200px; display: flex; justify-content: center; align-items: center; position: relative;">
+        <canvas id="silhouetteCanvas" width="200" height="250" style="transition: filter 0.8s ease;"></canvas>
     </div>
+
+    <div id="silhouetteInputArea" style="position: relative;">
+        <input type="text" id="silhouetteGuess" placeholder="Type card name..." autocomplete="off" style="width: 80%; padding: 8px; margin-bottom: 10px;">
+        <ul id="silhouetteSuggestions" class="suggestions-dropdown" style="display: none; position: absolute; left: 10%; width: 80%; text-align: left; z-index: 100; background: #333; border: 1px solid #555; list-style-type: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto;"></ul>
+        <br>
+        <button id="silhouetteSubmitBtn" class="generate-btn">Guess</button>
+    </div>
+
+    <p id="silhouetteFeedback" style="font-weight: bold; margin-top: 10px;"></p>
+</div>
 
     <div id="hlGameCard" class="game-container" style="background: #222; padding: 20px; border-radius: 12px; text-align: center; flex: 1 1 calc(50% - 20px); min-width: 320px; max-width: 500px; box-sizing: border-box;">
         <h3>Higher or Lower</h3>

@@ -1943,175 +1943,149 @@ modal.addEventListener('click', (e) => {
 });
 function renderGames() {
     // 1. Setup the Daily Seed
-    const today = new Date();
-    const dateString = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-    const dateSum = today.getFullYear() + today.getMonth() + today.getDate();
-    
-    // Convert your object to a sorted array of keys so everyone gets the same card
-    const cardKeys = Object.keys(cardDatabase).sort();
-    const dailyCardKey = cardKeys[dateSum % cardKeys.length]; 
-    const dailyCard = cardDatabase[dailyCardKey];
+const today = new Date();
+const dateString = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+const dateSum = today.getFullYear() + today.getMonth() + today.getDate();
 
-    // 2. Grab DOM Elements
-    const canvas = document.getElementById('silhouetteCanvas');
-    const ctx = canvas.getContext('2d');
-    const inputArea = document.getElementById('silhouetteInputArea');
-    const guessInput = document.getElementById('silhouetteGuess');
-    const submitBtn = document.getElementById('silhouetteSubmitBtn');
-    const feedbackEl = document.getElementById('silhouetteFeedback');
-    const hintsContainer = document.getElementById('silhouetteHints');
+const cardKeys = Object.keys(cardDatabase).sort();
+const dailyCardKey = cardKeys[dateSum % cardKeys.length]; 
+const dailyCard = cardDatabase[dailyCardKey];
 
-    // 3. State Management variables
-    const savedDate = localStorage.getItem('silhouetteDate');
-    const isSolved = localStorage.getItem('silhouetteSolved') === 'true';
-    let wrongGuesses = parseInt(localStorage.getItem('silhouetteGuesses') || '0');
+// 2. Grab DOM Elements
+const canvas = document.getElementById('silhouetteCanvas');
+const ctx = canvas.getContext('2d');
+const inputArea = document.getElementById('silhouetteInputArea');
+const guessInput = document.getElementById('silhouetteGuess');
+const submitBtn = document.getElementById('silhouetteSubmitBtn');
+const feedbackEl = document.getElementById('silhouetteFeedback');
+const suggestionsBox = document.getElementById('silhouetteSuggestions');
 
-    if (savedDate !== dateString) {
-        // New day! Reset everything.
-        localStorage.setItem('silhouetteDate', dateString);
-        localStorage.setItem('silhouetteSolved', 'false');
-        localStorage.setItem('silhouetteGuesses', '0');
-        wrongGuesses = 0;
-        setupUnsolvedState();
-    } else if (isSolved) {
+// 3. State Management variables
+const savedDate = localStorage.getItem('silhouetteDate');
+const isSolved = localStorage.getItem('silhouetteSolved') === 'true';
+let wrongGuesses = parseInt(localStorage.getItem('silhouetteGuesses') || '0');
+
+if (savedDate !== dateString) {
+    localStorage.setItem('silhouetteDate', dateString);
+    localStorage.setItem('silhouetteSolved', 'false');
+    localStorage.setItem('silhouetteGuesses', '0');
+    wrongGuesses = 0;
+    setupUnsolvedState();
+} else if (isSolved) {
+    setupSolvedState();
+} else {
+    setupUnsolvedState();
+}
+
+// --- State Helper Functions ---
+function setupUnsolvedState() {
+    inputArea.style.display = 'block';
+    feedbackEl.textContent = '';
+    updateImageBlur(); // Dynamically sets blur based on previous wrong guesses
+}
+
+function setupSolvedState() {
+    canvas.style.filter = 'blur(0px) grayscale(0%)';
+    inputArea.style.display = 'none';
+    feedbackEl.textContent = `You got it! It was ${dailyCard.Name.replace(/_/g, ' ')}!`;
+    feedbackEl.style.color = '#4CAF50';
+}
+
+// --- NEW: Progressive Blur Logic ---
+function updateImageBlur() {
+    // Starts at 20px blur. Drops by 3px per wrong guess. 
+    // Math.max ensures it never drops below 4px until they actually solve it.
+    const currentBlur = Math.max(4, 20 - (wrongGuesses * 3));
+    canvas.style.filter = `blur(${currentBlur}px) grayscale(100%)`;
+}
+
+// --- Autocomplete Logic ---
+let selectedRawName = null; 
+
+guessInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    suggestionsBox.innerHTML = ''; 
+    selectedRawName = null; 
+
+    if (query.length < 2) {
+        suggestionsBox.style.display = 'none';
+        return;
+    }
+
+    let matches = 0;
+    Object.keys(cardDatabase).forEach(rawName => {
+        if (matches >= 2) return; 
+        
+        const cleanName = rawName.replace(/_/g, ' ');
+        if (cleanName.toLowerCase().includes(query)) {
+            const cardInfo = cardDatabase[rawName];
+            
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${cleanName}</span> <span class="suggestion-class">${cardInfo.Class}</span>`;
+            
+            li.onclick = () => {
+                guessInput.value = cleanName;
+                selectedRawName = rawName; 
+                suggestionsBox.style.display = 'none';
+                newSubmitBtn.click(); 
+            };
+            
+            suggestionsBox.appendChild(li);
+            matches++;
+        }
+    });
+
+    suggestionsBox.style.display = matches > 0 ? 'block' : 'none';
+});
+
+// Hide suggestions if clicking outside
+document.addEventListener('click', (e) => {
+    if (e.target !== guessInput) suggestionsBox.style.display = 'none';
+});
+
+// --- Handle the Guess ---
+const newSubmitBtn = submitBtn.cloneNode(true);
+submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+newSubmitBtn.addEventListener('click', () => {
+    const actualNameKey = dailyCardKey.toLowerCase();
+    let guessKeyToTest = selectedRawName ? selectedRawName.toLowerCase() : guessInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+
+    if (guessKeyToTest === actualNameKey) {
+        // Correct Guess!
+        localStorage.setItem('silhouetteSolved', 'true');
         setupSolvedState();
     } else {
-        setupUnsolvedState();
+        // Wrong Guess!
+        wrongGuesses++;
+        localStorage.setItem('silhouetteGuesses', wrongGuesses.toString());
+        
+        feedbackEl.textContent = "Incorrect. The image is now a bit clearer!";
+        feedbackEl.style.color = '#f44336';
+        
+        updateImageBlur(); // Apply the new blur value
+        guessInput.value = '';
+        guessInput.focus();
     }
+});
 
-    // --- State Helper Functions ---
-   // --- State Helper Functions ---
-    function setupUnsolvedState() {
-        canvas.style.filter = 'blur(18px) grayscale(100%)'; 
-        inputArea.style.display = 'block';
-        feedbackEl.textContent = '';
-        updateHintsDisplay();
-    }
+// --- Image Loading ---
+const imgObj = new Image();
 
-    function setupSolvedState() {
-        canvas.style.filter = 'blur(0px) grayscale(0%)';
-        inputArea.style.display = 'none';
-        feedbackEl.textContent = `You got it! It was ${dailyCard.Name.replace(/_/g, ' ')}!`;
-        feedbackEl.style.color = '#4CAF50';
-        updateHintsDisplay(); 
-    }
+imgObj.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const scale = Math.min(canvas.width / imgObj.width, canvas.height / imgObj.height);
+    const x = (canvas.width / 2) - (imgObj.width / 2) * scale;
+    const y = (canvas.height / 2) - (imgObj.height / 2) * scale;
+    ctx.drawImage(imgObj, x, y, imgObj.width * scale, imgObj.height * scale);
+};
 
-    // --- Progressive Hint Logic ---
-    function updateHintsDisplay() {
-        if (wrongGuesses > 0) {
-            hintsContainer.style.display = 'block';
-            
-            // FIXED: Updated hints order to Class -> Rarity -> Cost
-            if (wrongGuesses >= 1) {
-                document.getElementById('hint1').classList.remove('hidden');
-                document.getElementById('hint1Text').textContent = `Class: ${dailyCard.Class}`;
-            }
-            if (wrongGuesses >= 2) {
-                document.getElementById('hint2').classList.remove('hidden');
-                document.getElementById('hint2Text').textContent = `Rarity: ${dailyCard.Rarity}`;
-            }
-            if (wrongGuesses >= 3) {
-                document.getElementById('hint3').classList.remove('hidden');
-                document.getElementById('hint3Text').textContent = `Cost: ${dailyCard.Cost}`;
-            }
-        } else {
-            hintsContainer.style.display = 'none';
-            document.getElementById('hint1').classList.add('hidden');
-            document.getElementById('hint2').classList.add('hidden');
-            document.getElementById('hint3').classList.add('hidden');
-        }
-    }
+imgObj.onerror = function() {
+    this.onerror = null; 
+    this.src = `card_images/${dailyCardKey}.webp`;
+};
 
-    // --- Autocomplete Logic ---
-    const suggestionsBox = document.getElementById('silhouetteSuggestions');
-    let selectedRawName = null; // Stores the exact DB key when clicked
-
-    guessInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        suggestionsBox.innerHTML = ''; 
-        selectedRawName = null; // Reset selection on typing
-
-        if (query.length < 2) {
-            suggestionsBox.style.display = 'none';
-            return;
-        }
-
-        let matches = 0;
-        Object.keys(cardDatabase).forEach(rawName => {
-            if (matches >= 2) return; // Keep dropdown small
-            
-            const cleanName = rawName.replace(/_/g, ' ');
-            if (cleanName.toLowerCase().includes(query)) {
-                const cardInfo = cardDatabase[rawName];
-                
-                const li = document.createElement('li');
-                // Reusing your exact suggestion styling
-                li.innerHTML = `<span>${cleanName}</span> <span class="suggestion-class">${cardInfo.Class}</span>`;
-                
-                li.onclick = () => {
-                    guessInput.value = cleanName;
-                    selectedRawName = rawName; // Save exact database key
-                    suggestionsBox.style.display = 'none';
-                    newSubmitBtn.click(); // Auto-submit when clicked
-                };
-                
-                suggestionsBox.appendChild(li);
-                matches++;
-            }
-        });
-
-        suggestionsBox.style.display = matches > 0 ? 'block' : 'none';
-    });
-
-    // Hide suggestions if clicking outside
-    document.addEventListener('click', (e) => {
-        if (e.target !== guessInput) suggestionsBox.style.display = 'none';
-    });
-
-    // --- Handle the Guess ---
-    const newSubmitBtn = submitBtn.cloneNode(true);
-    submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
-    
-    newSubmitBtn.addEventListener('click', () => {
-        // Use the selected DB key from autocomplete, or try to format their manual text
-        const actualNameKey = dailyCardKey.toLowerCase();
-        let guessKeyToTest = selectedRawName ? selectedRawName.toLowerCase() : guessInput.value.trim().toLowerCase().replace(/\s+/g, '_');
-
-        if (guessKeyToTest === actualNameKey) {
-            // Correct Guess!
-            localStorage.setItem('silhouetteSolved', 'true');
-            setupSolvedState();
-        } else {
-            // Wrong Guess!
-            wrongGuesses++;
-            localStorage.setItem('silhouetteGuesses', wrongGuesses.toString());
-            
-            feedbackEl.textContent = "Incorrect. Try again!";
-            feedbackEl.style.color = '#f44336';
-            
-            updateHintsDisplay(); 
-            guessInput.value = '';
-            guessInput.focus();
-        }
-    });
-
-   const imgObj = new Image();
-    
-    imgObj.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // This math scales the image perfectly inside the canvas (like background-size: contain)
-        const scale = Math.min(canvas.width / imgObj.width, canvas.height / imgObj.height);
-        const x = (canvas.width / 2) - (imgObj.width / 2) * scale;
-        const y = (canvas.height / 2) - (imgObj.height / 2) * scale;
-        ctx.drawImage(imgObj, x, y, imgObj.width * scale, imgObj.height * scale);
-    };
-
-    imgObj.onerror = function() {
-        this.onerror = null; // Prevent infinite loop
-        this.src = `card_images/${dailyCardKey}.webp`;
-    };
-
-    imgObj.src = `card_images/${dailyCardKey}.png`;
+imgObj.src = `card_images/${dailyCardKey}.png`;
 
 // ==========================================
 // HIGHER OR LOWER LOGIC
