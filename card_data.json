@@ -889,7 +889,7 @@
     },
     "Gloom-Shroom": {
         "Name": "Gloom-Shroom",
-        "Class": "Smarty",
+        "Class": "Kabloom",
         "Cost": 5,
         "Strength": 5.0,
         "Health": 4.0,
