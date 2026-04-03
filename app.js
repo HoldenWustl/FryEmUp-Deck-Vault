@@ -631,21 +631,23 @@ function handleRouting() {
                 scales: { x: { grid: { color: gridColor }, ticks: { color: textColor } }, y: { ticks: { color: '#c9d1d9' }, grid: { display: false } } },
                 plugins: { legend: { display: false }, tooltip: { callbacks: { footer: () => '👉 Click to search for this card' } } },
                 onClick: (e, activeElements) => {
-                    if (activeElements.length > 0) {
-                       const clickedCard = charts.topCards.data.labels[activeElements[0].index];
+                   if (activeElements.length > 0) {
+    const clickedCard = charts.topCards.data.labels[activeElements[0].index];
+    
+    // 1. Trigger the router
+    window.location.hash = '#'; 
 
-// 1. Change the hash to let the site's router handle the view switching (showing deckView, hiding statsView, etc.)
-window.location.hash = '#'; 
-
-// 2. Wait a split second for the site's view transition to finish, then run the search
-setTimeout(() => {
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.value = clickedCard;
-        searchInput.dispatchEvent(new Event('input'));
-    }
-}, 50);
-                    }
+    // 2. Wait exactly one render frame for the DOM to update
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = clickedCard;
+                searchInput.dispatchEvent(new Event('input'));
+            }
+        });
+    });
+}
                 },
                 onHover: (e, activeElements) => { e.native.target.style.cursor = activeElements.length ? 'pointer' : 'default'; }
             }
