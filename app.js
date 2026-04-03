@@ -1265,6 +1265,25 @@ const emptySeedMsg = document.getElementById('emptySeedMsg');
 const generateDeckBtn = document.getElementById('generateDeckBtn');
 const clearSeedsBtn = document.getElementById('clearSeedsBtn'); // NEW: Grab the Clear button
 
+const budgetToggle = document.getElementById('budgetToggle');
+const superBudgetToggle = document.getElementById('superBudgetToggle');
+
+if (budgetToggle && superBudgetToggle) {
+    // If Budget is checked, uncheck Super Budget
+    budgetToggle.addEventListener('change', function() {
+        if (this.checked) {
+            superBudgetToggle.checked = false;
+        }
+    });
+
+    // If Super Budget is checked, uncheck Budget
+    superBudgetToggle.addEventListener('change', function() {
+        if (this.checked) {
+            budgetToggle.checked = false;
+        }
+    });
+}
+
 // Helper: Get total number of cards currently seeded
 const getTotalCards = () => currentSeeds.reduce((sum, seed) => sum + seed.count, 0);
 
@@ -1542,16 +1561,16 @@ function buildOptimizedDeck() {
     const rawWeight = 0.25 + (Math.random() * 0.30);
     const affinityWeight = 1.0 - rawWeight;
     
-    // Check if Budget Mode is active
+    // Check Budget Modes
     const budgetToggle = document.getElementById('budgetToggle');
+    const superBudgetToggle = document.getElementById('superBudgetToggle');
     const isBudget = budgetToggle ? budgetToggle.checked : false;
+    const isSuperBudget = superBudgetToggle ? superBudgetToggle.checked : false;
     
     while (true) {
-        // Recalculate totals at the start of every loop
         let totalCards = workingDeck.reduce((sum, c) => sum + c.count, 0);
         if (totalCards >= 40) break;
 
-        // Calculate current budget consumption
         let expensiveCount = workingDeck.reduce((sum, c) => {
             if (!cardDatabase[c.name]) return sum;
             const r = cardDatabase[c.name].Rarity;
@@ -1563,7 +1582,6 @@ function buildOptimizedDeck() {
 
         let candidatePool = Object.keys(cardDatabase);
         
-        // "Closing Door" Logic to prevent late-game orphans
         const slotsLeft = 40 - totalCards;
         const currentOrphans = workingDeck.filter(c => c.count === 1).length;
 
@@ -1576,7 +1594,6 @@ function buildOptimizedDeck() {
             const candidateClass = candidateData.Class;
             const candidateFaction = plantClasses.has(candidateClass) ? "Plant" : "Zombie";
 
-            // Basic game logic filters
             if (candidateFaction !== deckFaction) return; 
             if (!workingClasses.has(candidateClass) && workingClasses.size >= 2) return; 
 
@@ -1584,22 +1601,28 @@ function buildOptimizedDeck() {
             const currentCopies = existingCopy ? existingCopy.count : 0;
             if (currentCopies >= 4) return; 
 
-            // --- NEW: BUDGET FILTERS ---
-            if (isBudget) {
+            // --- BUDGET & SUPER BUDGET FILTERS ---
+            if (isBudget || isSuperBudget) {
                 const rarity = candidateData.Rarity;
-                if (rarity === "Legendary") return; // Hard ban on Legendaries
+                if (rarity === "Legendary") return; 
 
                 if (rarity === "Super-Rare" || rarity === "Event") {
-                    // The Soft Ceiling: Only allow a BRAND NEW expensive card if we have 
-                    // enough budget room (13 or fewer) to potentially make it a 3x or 4x.
-                    // If it's already in the deck (currentCopies > 0), let it upgrade.
-                    if (currentCopies === 0 && expensiveCount > 13) return; 
+                    if (isSuperBudget) {
+                        // Hard Cap: Absolutely no more than 4 expensive cards total
+                        if (expensiveCount >= 4) return;
+                        
+                        // Soft Ceiling: Once we have ANY expensive cards, do not add NEW unique ones.
+                        // Force the AI to upgrade the existing one to a playset.
+                        if (currentCopies === 0 && expensiveCount > 0) return;
+                    } else {
+                        // Standard Budget: Allow up to ~20, block new ones after 13
+                        if (currentCopies === 0 && expensiveCount > 13) return; 
+                    }
                 }
             }
 
             let score = 0;
 
-            // Core Synergy Loop
             workingDeck.forEach(deckCard => {
                 if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
                     const coOccurrences = synergyMatrix[candidateName][deckCard.name];
@@ -1622,7 +1645,6 @@ function buildOptimizedDeck() {
 
             if (score === 0) score = 0.1;
 
-            // Dynamic Consistency & Meta Scaling
             let avgCopies = 3; 
             if (cardAverageCopies && cardAverageCopies[candidateName]) {
                 avgCopies = cardAverageCopies[candidateName].total / cardAverageCopies[candidateName].appearances;

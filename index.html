@@ -288,7 +288,7 @@
 
         <section id="crafterView" class="hidden">
             <div class="crafter-header">
-                <h2>Deck Builder 2.0</h2>
+                <h2>Deck Builder 2.4</h2>
                 <p>Select up to 4 different seed cards. The engine will build the rest of your deck!</p>
             </div>
 
@@ -304,13 +304,19 @@
                 </ul>
             </div>
 
-            <div class="crafter-controls">
+           <div class="crafter-controls">
     <button id="generateDeckBtn" class="generate-btn" disabled>Generate Deck</button>
     <button id="clearSeedsBtn" class="clear-btn">Clear All</button>
     
-    <div style="display: flex; align-items: center; margin-left: 15px; gap: 8px;">
-        <input type="checkbox" id="budgetToggle" style="cursor: pointer;">
-        <label for="budgetToggle" style="cursor: pointer; font-weight: bold;">Budget Mode</label>
+    <div style="display: flex; align-items: center; margin-left: 15px; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <input type="checkbox" id="budgetToggle" style="cursor: pointer;">
+            <label for="budgetToggle" style="cursor: pointer; font-weight: bold;">Budget</label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <input type="checkbox" id="superBudgetToggle" style="cursor: pointer;">
+            <label for="superBudgetToggle" style="cursor: pointer; font-weight: bold;">Super Budget</label>
+        </div>
     </div>
 </div>
 
