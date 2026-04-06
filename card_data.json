@@ -3350,10 +3350,10 @@
     "Celestial_Custodian": {
         "Name": "Celestial_Custodian",
         "Class": "Hearty",
-        "Cost": 3,
+        "Cost": 4,
         "Strength": 3.0,
-        "Health": 2.0,
-        "Description": "When played in an Environment: Destroy a Plant with 2 or less. ",
+        "Health": 4.0,
+        "Description": "When played in an Environment: Destroy a Plant with 3 or less. ",
         "Type": "Professional Mustache Zombie",
         "Rarity": "Uncommon",
         "Set": "Galactic",
