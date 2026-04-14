@@ -1649,25 +1649,29 @@ function buildOptimizedDeck() {
 
             let score = 0;
 
-            workingDeck.forEach(deckCard => {
-                if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
-                    const coOccurrences = synergyMatrix[candidateName][deckCard.name];
-                    const candidateTotalPlays = cardFrequencies[candidateName] || 1;
-                    
-                    let rawSynergy = coOccurrences;
-                    let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays;
-                    let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
-                    
-                    const isOriginalSeed = currentSeeds.some(s => s.name === deckCard.name);
+          workingDeck.forEach(deckCard => {
+    if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
+        const coOccurrences = synergyMatrix[candidateName][deckCard.name];
+        const candidateTotalPlays = cardFrequencies[candidateName] || 1;
+        
+        // 1. Calculate pure mathematical synergies FIRST
+        let rawSynergy = coOccurrences;
+        let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays; 
+        
+        let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
+        
+        // 2. Determine the structural bias modifier
+        let classModifier = 1.0;
+        if (cardDatabase[candidateName].Class !== cardDatabase[deckCard.name].Class) {
+            classModifier = 4.0;  
+        }
 
-                    let classModifier = 1.0;
-                    if (cardDatabase[candidateName].Class !== cardDatabase[deckCard.name].Class) {
-                        classModifier = 3.5; 
-                    }
-                    
-                    score += (blendedSynergy * classModifier) * deckCard.count * (isOriginalSeed ? 3 : 1);
-                }
-            });
+        const isOriginalSeed = currentSeeds.some(s => s.name === deckCard.name);
+
+        // 3. Apply the class modifier to the final blended synergy linearly
+        score += (blendedSynergy * classModifier) * deckCard.count * (isOriginalSeed ? 3 : 1);
+    }
+});
 
             if (score === 0) score = 0.1;
 
