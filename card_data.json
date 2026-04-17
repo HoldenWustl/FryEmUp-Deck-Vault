@@ -2831,8 +2831,8 @@
         "Set": "Triassic",
         "Set #": 4.0
     },
-    "Venus_Flytrap": {
-        "Name": "Venus_Flytrap",
+    "Venus_Flytraplanet": {
+        "Name": "Venus_Flytraplanet",
         "Class": "Solar",
         "Cost": 4,
         "Strength": null,
@@ -2842,6 +2842,18 @@
         "Rarity": "Uncommon",
         "Set": "Galactic",
         "Set #": 2.0
+    },
+    "Venus_Flytrap": {
+        "Name": "Venus_Flytrap",
+        "Class": "Solar",
+        "Cost": 3,
+        "Strength": 3,
+        "Health": 1,
+        "Description": "When this does damage, heal your Hero for that much.",
+        "Type": "Flytrap Plant",
+        "Rarity": "Uncommon",
+        "Set": "Premium",
+        "Set #": 1.0
     },
     "Wall-Nut_Bowling": {
         "Name": "Wall-Nut_Bowling",
