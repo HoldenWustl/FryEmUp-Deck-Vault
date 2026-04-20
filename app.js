@@ -1853,12 +1853,12 @@ function updateDeckStats() {
     if (totalCards > 0 && currentSeeds.length > 1) {
         let rawAvg = totalConnection / totalCards;
         
-        // Apply an exponential curve to the raw cosine average. 
-        // A truly cohesive meta deck usually hits ~0.6 to 0.7 Cosine.
-        synergyScore = Math.min(Math.round(Math.pow(rawAvg, 0.85) * 135), 100);
+        // Use an exponent > 1 to crush random noise.
+        // A random deck (rawAvg ~0.3) will now score roughly 20-25%.
+        // A meta deck (rawAvg ~0.65) will scale up nicely to 85-95%.
+        synergyScore = Math.min(Math.round(Math.pow(rawAvg, 1.8) * 220), 100);
         
         // Dampen the score slightly if the deck is super tiny (less than 6 cards)
-        // This prevents 2 isolated cards from immediately claiming 100% deck cohesion.
         if (totalCards < 6) {
             synergyScore = Math.round(synergyScore * (totalCards / 6));
         }
@@ -1867,14 +1867,14 @@ function updateDeckStats() {
         synergyScore = 5; 
     }
 
-    if (currentSeeds.length > 3 && synergyScore < 10) synergyScore = 10;
+    // Optional: Remove the "minimum 10 score" safety net so bad decks actually show 0-5%.
+    // if (currentSeeds.length > 3 && synergyScore < 10) synergyScore = 10;
 
     document.getElementById('synergyPercent').innerText = `${synergyScore}%`;
     const fillBar = document.getElementById('synergyFill');
     fillBar.style.width = `${synergyScore}%`;
     
-    // Dynamic color shifting based on harsh Cosine grading
-    if (synergyScore >= 80) fillBar.style.background = "#e91e63"; // Pink/Mythic (Amazing)
+    if (synergyScore >= 80) fillBar.style.background = "#e91e63"; // Pink/Mythic
     else if (synergyScore >= 50) fillBar.style.background = "#4CAF50"; // Green/Good
     else fillBar.style.background = "#ffb300"; // Yellow/Okay
 }
