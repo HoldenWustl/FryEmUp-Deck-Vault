@@ -1313,7 +1313,7 @@ seedInput.addEventListener('input', function() {
     suggestionsBox.innerHTML = ''; 
 
     if (getTotalCards() >= 40) {
-        suggestionsBox.innerHTML = '<li style="color: #ff7b72; justify-content: center;">Deck is full (40 cards)!</li>';
+        suggestionsBox.innerHTML = '<li style="color: #ff7b72; justify-content: center;">Deck is full! (40 cards)</li>';
         suggestionsBox.style.display = 'block';
         return;
     }
@@ -1395,8 +1395,15 @@ function renderSeeds() {
     const resultsContainer = document.getElementById('generatedDeckList'); 
     const tracker = document.getElementById('cardCountTracker'); 
     const title = document.getElementById('generatedDeckTitle');
-    const copyBtn = document.getElementById('copyDeckBtn');
+    const actionContainer = document.getElementById('deckActionContainer'); 
     const totalCards = getTotalCards();
+
+    // NEW: Always dynamically reconstruct the active classes to prevent de-sync bugs!
+    activeClasses.clear();
+    currentSeeds.forEach(seed => {
+        const cardClass = cardDatabase[seed.name]?.Class;
+        if (cardClass) activeClasses.add(cardClass);
+    });
 
     resultsContainer.innerHTML = '';
     resultsContainer.className = 'visual-deck-grid';
@@ -1407,7 +1414,7 @@ function renderSeeds() {
         resultsContainer.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #888;">No cards added yet. Search above to begin!</div>';
         generateDeckBtn.disabled = true;
         if (title) title.classList.add('hidden');
-        if (copyBtn) copyBtn.classList.add('hidden');
+        if (actionContainer) actionContainer.style.display = 'none'; 
         currentFaction = null;
         activeClasses.clear();
         lastAddedCard = null;
@@ -1417,7 +1424,6 @@ function renderSeeds() {
 
     generateDeckBtn.disabled = totalCards >= 40;
 
-    // Handle Deck Naming & Copying if deck is full
     if (totalCards >= 40) {
         const classArray = Array.from(activeClasses).sort();
         const heroName = heroMap[classArray.join(',')] || `Any ${classArray.join(' / ')} Hero`;
@@ -1433,13 +1439,15 @@ function renderSeeds() {
         }
         
         currentClipboardText = `Deck: ${aiDeckName}\nHero: ${heroName}\n\n`;
-        if (copyBtn) copyBtn.classList.remove('hidden');
+        if (actionContainer) {
+            actionContainer.classList.remove('hidden'); 
+            actionContainer.style.display = 'flex'; 
+        }
     } else {
         if (title) title.classList.add('hidden');
-        if (copyBtn) copyBtn.classList.add('hidden');
+        if (actionContainer) actionContainer.style.display = 'none'; 
     }
 
-    // Sort visually
     let displaySeeds = [...currentSeeds].sort((a, b) => {
         const costA = cardDatabase[a.name]?.Cost || 0;
         const costB = cardDatabase[b.name]?.Cost || 0;
@@ -1448,50 +1456,50 @@ function renderSeeds() {
     });
 
     displaySeeds.forEach(seed => {
-    const displayName = seed.name.replace(/_/g, ' ');
-    const dbName = displayName.replace(/ /g, '_');
-    const disablePlus = seed.count >= 4 || totalCards >= 40;
+        const displayName = seed.name.replace(/_/g, ' ');
+        const dbName = displayName.replace(/ /g, '_');
+        const disablePlus = seed.count >= 4 || totalCards >= 40;
 
-    const cardDiv = document.createElement('div');
-    cardDiv.className = 'visual-card';
-    
-    const img = document.createElement('img');
-    img.src = `card_images/${dbName}.png`;
-    img.alt = displayName;
-    img.title = displayName;
-    img.onerror = function() { this.onerror = null; this.src = `card_images/${dbName}.webp`; };
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'visual-card';
+        
+        const img = document.createElement('img');
+        img.src = `card_images/${dbName}.png`;
+        img.alt = displayName;
+        img.title = displayName;
+        img.onerror = function() { this.onerror = null; this.src = `card_images/${dbName}.webp`; };
 
-    const badge = document.createElement('div');
-    badge.className = 'card-quantity';
-    badge.textContent = `x${seed.count}`;
+        const badge = document.createElement('div');
+        badge.className = 'card-quantity';
+        badge.textContent = `x${seed.count}`;
 
-    const controls = document.createElement('div');
-    controls.className = 'visual-card-controls';
-    controls.innerHTML = `
-        <button class="seed-btn minus-btn" data-name="${seed.name}">-</button>
-        <button class="seed-btn swap-btn" data-name="${seed.name}">↔</button>
-        <button class="seed-btn plus-btn" data-name="${seed.name}" ${disablePlus ? 'disabled' : ''}>+</button>
-    `;
+        const controls = document.createElement('div');
+        controls.className = 'visual-card-controls';
+        controls.innerHTML = `
+            <button class="seed-btn minus-btn" data-name="${seed.name}">-</button>
+            <button class="seed-btn swap-btn" data-name="${seed.name}">↔</button>
+            <button class="seed-btn plus-btn" data-name="${seed.name}" ${disablePlus ? 'disabled' : ''}>+</button>
+        `;
 
-    cardDiv.appendChild(img);
-    cardDiv.appendChild(badge);
-    cardDiv.appendChild(controls);
-    resultsContainer.appendChild(cardDiv);
+        cardDiv.appendChild(img);
+        cardDiv.appendChild(badge);
+        cardDiv.appendChild(controls);
+        resultsContainer.appendChild(cardDiv);
 
-    cardDiv.addEventListener('click', () => {
-        const isOpen = cardDiv.classList.contains('show-controls');
-        document.querySelectorAll('.visual-card.show-controls').forEach(el => el.classList.remove('show-controls'));
-        if (!isOpen) cardDiv.classList.add('show-controls');
+        cardDiv.addEventListener('click', () => {
+            const isOpen = cardDiv.classList.contains('show-controls');
+            document.querySelectorAll('.visual-card.show-controls').forEach(el => el.classList.remove('show-controls'));
+            if (!isOpen) cardDiv.classList.add('show-controls');
+        });
+
+        controls.addEventListener('click', e => {
+            e.stopPropagation();
+        });
+
+        if (totalCards >= 40) {
+            currentClipboardText += `${seed.count}x ${displayName}\n`;
+        }
     });
-
-    controls.addEventListener('click', e => {
-        e.stopPropagation();
-    });
-
-    if (totalCards >= 40) {
-        currentClipboardText += `${seed.count}x ${displayName}\n`;
-    }
-});
 
     attachQuantityListeners();
     triggerAICoPilot();
@@ -1793,6 +1801,7 @@ function updateDeckStats() {
 }
 // --- 3. CONVERSATIONAL AI CO-PILOT ---
 function triggerAICoPilot() {
+    window.activeSwapTarget = null;
     const chatFeed = document.getElementById('aiChatFeed');
     if (!chatFeed) return;
 
@@ -1801,28 +1810,139 @@ function triggerAICoPilot() {
         return;
     }
 
-       if (getTotalCards() >= 40) {
+    if (getTotalCards() >= 40) {
         const closestDeck = getClosestDeckMatch();
+        let baseHtml = "";
 
         if (!closestDeck) {
-            chatFeed.innerHTML = `<div class="ai-message system">Your deck is complete! I could not find a close match in the deck database.</div>`;
-            return;
+            baseHtml = `<div class="ai-message system">Your deck is complete! I could not find a close match in the deck database.</div>`;
+        } else {
+            baseHtml = `
+                <div class="ai-message system">
+                    Your deck is complete! Your deck is closest to 
+                    <a href="${closestDeck.youtube_url}" target="_blank" rel="noopener noreferrer" style="font-weight: bold; color: var(--accent, #4CAF50); text-decoration: underline;">
+                        ${closestDeck.name}
+                    </a>.
+                    <div style="margin-top: 6px; font-size: 0.9em; opacity: 0.85;">
+                        Video: ${closestDeck.youtube_title || "YouTube deck video"}
+                    </div>
+                </div>
+            `;
         }
 
-        chatFeed.innerHTML = `
-            <div class="ai-message system">
-                Your deck is complete! Your deck is closest to 
-                <a href="${closestDeck.youtube_url}" target="_blank" rel="noopener noreferrer" style="font-weight: bold; color: var(--accent, #4CAF50); text-decoration: underline;">
-                    ${closestDeck.name}
-                </a>.
-                <div style="margin-top: 6px; font-size: 0.9em; opacity: 0.85;">
-                    Video: ${closestDeck.youtube_title || "YouTube deck video"}
+        // --- FIXED: Evaluate ALL possible swaps to find the highest net synergy gain ---
+        initSynergyMatrix();
+        
+        let bestSwapIdea = null;
+        let maxImprovement = 0;
+        const rawWeight = 0.5;
+        const affinityWeight = 0.5;
+
+        // 1. Calculate the base score of every card and compare it to its top replacement
+        currentSeeds.forEach(seed => {
+            let baseScore = 0;
+            currentSeeds.forEach(deckCard => {
+                if (deckCard.name === seed.name) return; // Don't score against itself
+                
+                if (synergyMatrix && synergyMatrix[seed.name] && synergyMatrix[seed.name][deckCard.name]) {
+                    const coOccurrences = synergyMatrix[seed.name][deckCard.name];
+                    const baseTotalPlays = cardFrequencies[seed.name] || 1;
+                    
+                    let rawSynergy = coOccurrences;
+                    let affinitySynergy = (coOccurrences * coOccurrences) / baseTotalPlays;
+                    let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
+                    
+                    let classModifier = 1.0;
+                    if (cardDatabase[seed.name].Class !== cardDatabase[deckCard.name].Class) {
+                        classModifier = 4.0;
+                    }
+                    
+                    const deckCardPlays = cardFrequencies[deckCard.name] || 1;
+                    const volumeEqualizer = 1000 / deckCardPlays;
+                    
+                    baseScore += (blendedSynergy * classModifier * volumeEqualizer) * deckCard.count;
+                }
+            });
+
+            // Check if swapping THIS card yields a mathematical improvement
+            const recommendations = getTopThreeRecommendations(seed.name);
+            if (recommendations.length > 0) {
+                const topRec = recommendations[0];
+                const improvement = topRec.score - baseScore;
+                
+                // If it's a positive improvement AND the best one we've found so far, save it
+                if (improvement > maxImprovement) {
+                    maxImprovement = improvement;
+                    bestSwapIdea = {
+                        removeCard: seed.name,
+                        addCard: topRec.name
+                    };
+                }
+            }
+        });
+
+        let swapHtml = "";
+
+        // 2. If we found a swap with a positive net improvement, suggest the best one
+        if (bestSwapIdea) {
+            const weakName = bestSwapIdea.removeCard.replace(/_/g, ' ');
+            const topName = bestSwapIdea.addCard.replace(/_/g, ' ');
+
+            swapHtml = `
+                <div class="ai-message system" style="margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    I found a way to make this deck even better!
+                    Swapping out <strong>${weakName}</strong> for <strong>${topName}</strong> would give your deck a nice boost!
                 </div>
-            </div>
-        `;
+                
+                <div class="ai-recommendations-grid" style="display: flex; gap: 8px; justify-content: center; width: 100%; margin-top: 10px;">
+                    <div class="ai-visual-rec" style="flex: 0 1 240px; display: flex; flex-direction: column; align-items: center; padding: 10px; position: relative;">
+                        <span style="position: absolute; top: -5px; left: 50%; transform: translateX(-50%); background: #ffb300; color: #fff; font-size: 0.65em; font-weight: bold; padding: 4px 10px; border-radius: 12px; z-index: 2; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">
+                            Top Swap Idea
+                        </span>
+                        
+                        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; margin: 15px 0 10px 0; gap: 8px;">
+                            <img src="card_images/${bestSwapIdea.removeCard}.png" alt="${weakName}" title="${weakName}" onerror="this.onerror=null; this.src='card_images/${bestSwapIdea.removeCard}.webp';" style="flex: 1; max-width: 40%; max-height: 80px; object-fit: contain; filter: grayscale(60%) drop-shadow(0 2px 4px rgba(0,0,0,0.3)); opacity: 0.7;">
+                            
+                            <span style="font-size: 1.4em; color: #ffb300; font-weight: bold;">➔</span>
+                            
+                            <img src="card_images/${bestSwapIdea.addCard}.png" alt="${topName}" title="${topName}" onerror="this.onerror=null; this.src='card_images/${bestSwapIdea.addCard}.webp';" style="flex: 1; max-width: 45%; max-height: 90px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.5));">
+                        </div>
+                        
+                        <button class="add-rec-btn generate-btn" data-remove="${bestSwapIdea.removeCard}" data-add="${bestSwapIdea.addCard}" style="width: 100%; padding: 6px 0; font-size: 0.9em; font-weight: bold; margin: 0; margin-top: auto; border-radius: 6px; white-space: nowrap;">
+                            Swap
+                        </button>
+
+                        <div style="text-align: center; font-size: 0.85em; font-weight: bold; color: #4CAF50; margin-top: 6px; letter-spacing: 0.5px;">
+                            Better Synergy
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // ONLY triggers if literally no card has a replacement with a higher score
+            swapHtml = `
+                <div class="ai-message system" style="margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    Great job on such a cohesive deck!
+                </div>
+            `;
+        }
+
+        chatFeed.innerHTML = baseHtml + swapHtml;
+        
+        // 3. Attach click listener for the swap button if it rendered
+        const swapBtn = chatFeed.querySelector('.add-rec-btn[data-remove]');
+        if (swapBtn) {
+            swapBtn.addEventListener('click', (e) => {
+                const removeName = e.target.getAttribute('data-remove');
+                const addName = e.target.getAttribute('data-add');
+                applyFullSwap(removeName, addName);
+            });
+        }
+        
         return;
     }
 
+    // --- The rest of your function below for when the deck is NOT complete ---
     initSynergyMatrix(); 
     chatFeed.innerHTML = `<div class="ai-message system"><em>Analyzing synergies...</em></div>`;
 
@@ -1867,7 +1987,6 @@ function triggerAICoPilot() {
         let comboTriggered = false;
 
         if (lastAddedCard) {
-            // --- NEW: COMBO DETECTOR ---
             // Check if the last card added completes any combo in our dictionary
             const triggeredCombo = comboDictionary.find(combo => 
                 combo.cards.includes(lastAddedCard) && // The card we just added must be part of the combo
@@ -1875,7 +1994,6 @@ function triggerAICoPilot() {
             );
 
             if (triggeredCombo) {
-                // Convert **bold** to <strong> and *italics* to <em>
                 let formattedMessage = triggeredCombo.message
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/g, '<em>$1</em>');
@@ -1884,7 +2002,6 @@ function triggerAICoPilot() {
                 comboTriggered = true;
             }
 
-            // --- STANDARD GREETING (If no combo was triggered) ---
             if (!comboTriggered) {
                 const lastNameClean = lastAddedCard.replace(/_/g, ' ');
                 const lastCardData = cardDatabase[lastAddedCard];
@@ -2043,9 +2160,20 @@ function showSwapSuggestions(baseCardName) {
     const chatFeed = document.getElementById('aiChatFeed');
     if (!chatFeed) return;
 
+    // --- NEW: QoL Toggle Logic ---
+    // If clicking swap on the same card that is already open, close it and return to the normal Co-Pilot
+    if (window.activeSwapTarget === baseCardName) {
+        window.activeSwapTarget = null;
+        triggerAICoPilot(); 
+        return;
+    }
+    // Otherwise, set it as the new active target
+    window.activeSwapTarget = baseCardName;
+    // -----------------------------
+
     const baseSeed = currentSeeds.find(c => c.name === baseCardName);
     if (!baseSeed) return;
-
+    
     const displayName = baseCardName.replace(/_/g, ' ');
     initSynergyMatrix();
 
@@ -2053,40 +2181,77 @@ function showSwapSuggestions(baseCardName) {
 
     setTimeout(() => {
         const replacements = getTopThreeRecommendations(baseCardName);
-
+        
         if (replacements.length === 0) {
             chatFeed.innerHTML = `<div class="ai-message system">I could not find any good replacements for <strong>${displayName}</strong>.</div>`;
             return;
         }
 
-        let html = `<div class="ai-message system">We might be able to do better than <strong>${displayName}</strong>! Here's my recommendations:</div>`;
-        html += `<div class="ai-recommendations-grid" style="display: flex; gap: 8px; justify-content: space-between; width: 100%; margin-bottom: 10px; box-sizing: border-box;">`;
+        let baseScore = 0;
+        const rawWeight = 0.5;
+        const affinityWeight = 0.5;
+        
+        currentSeeds.forEach(deckCard => {
+            if (deckCard.name === baseCardName) return; 
+            
+            if (synergyMatrix && synergyMatrix[baseCardName] && synergyMatrix[baseCardName][deckCard.name]) {
+                const coOccurrences = synergyMatrix[baseCardName][deckCard.name];
+                const baseTotalPlays = cardFrequencies[baseCardName] || 1;
+                
+                let rawSynergy = coOccurrences;
+                let affinitySynergy = (coOccurrences * coOccurrences) / baseTotalPlays;
+                let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
+                
+                let classModifier = 1.0;
+                if (cardDatabase[baseCardName].Class !== cardDatabase[deckCard.name].Class) {
+                    classModifier = 4.0;
+                }
+                
+                const deckCardPlays = cardFrequencies[deckCard.name] || 1;
+                const volumeEqualizer = 1000 / deckCardPlays;
+                
+                baseScore += (blendedSynergy * classModifier * volumeEqualizer) * deckCard.count;
+            }
+        });
 
+        let html = `<div class="ai-message system">We might be able to do better than <strong>${displayName}</strong>! Here's the top alternatives:</div>`;
+        html += `<div class="ai-recommendations-grid" style="display: flex; gap: 8px; justify-content: space-between; width: 100%; margin-bottom: 10px; box-sizing: border-box;">`;
+        
         replacements.forEach((rec, index) => {
             const cardName = rec.name.replace(/_/g, ' ');
             const badgeText = index === 0 ? "Best Fit" : (index === 1 ? "2nd Choice" : "3rd Choice");
             const badgeColor = index === 0 ? "#ffb300" : "var(--accent, #4CAF50)";
-
+            
+            const isBetter = rec.score > baseScore;
+            const comparisonText = isBetter ? "Better" : "Worse";
+            const comparisonColor = isBetter ? "#4CAF50" : "#f44336"; 
+            
             html += `
                 <div class="ai-visual-rec" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 5px; position: relative; height: 100%;">
+                    
                     <span style="position: absolute; top: -5px; left: 50%; transform: translateX(-50%); background: ${badgeColor}; color: #fff; font-size: 0.65em; font-weight: bold; padding: 4px 10px; border-radius: 12px; z-index: 2; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">
                         ${badgeText}
                     </span>
-
+                    
                     <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; margin: 12px 0 8px 0;">
                         <img src="card_images/${rec.name}.png" alt="${cardName}" title="${cardName}" onerror="this.onerror=null; this.src='card_images/${rec.name}.webp';" style="max-width: 100%; max-height: 100px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.5));">
                     </div>
-
+                    
                     <button class="add-rec-btn generate-btn" data-remove="${baseCardName}" data-add="${rec.name}" style="width: 100%; padding: 6px 0; font-size: 0.8em; font-weight: bold; margin: 0; margin-top: auto; border-radius: 6px; white-space: nowrap;">
                         Swap
                     </button>
+
+                    <div style="text-align: center; font-size: 0.85em; font-weight: bold; color: ${comparisonColor}; margin-top: 6px; letter-spacing: 0.5px;">
+                        ${comparisonText}
+                    </div>
+                    
                 </div>
             `;
         });
-
+        
         html += `</div>`;
         chatFeed.innerHTML = html;
-
+        
         chatFeed.querySelectorAll('.add-rec-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const removeName = e.target.getAttribute('data-remove');
@@ -2094,6 +2259,7 @@ function showSwapSuggestions(baseCardName) {
                 applyFullSwap(removeName, addName);
             });
         });
+
     }, 50);
 }
 function applyFullSwap(removeName, addName) {
@@ -2389,6 +2555,157 @@ if (copyDeckBtn) {
                 btn.style.background = ""; 
             }, 2000);
         }).catch(err => console.error("Failed to copy text: ", err));
+    });
+}
+const downloadBtn = document.getElementById('downloadImageBtn');
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', async (e) => {
+        if (currentSeeds.length === 0) return;
+
+        const btn = e.target;
+        const originalText = btn.innerText;
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
+        try {
+            // 1. Grab Title and Hero directly from the DOM so it perfectly matches the screen
+            const titleContainer = document.getElementById('generatedDeckTitle');
+            let mainTitleText = "My Deck";
+            let subTitleText = "";
+            
+            if (titleContainer) {
+                const divs = titleContainer.querySelectorAll('div');
+                if (divs.length >= 2) {
+                    mainTitleText = divs[0].innerText.replace(/"/g, ''); 
+                    subTitleText = divs[1].innerText;
+                } else if (titleContainer.innerText.trim() !== '') {
+                    mainTitleText = titleContainer.innerText;
+                }
+            }
+
+            // 2. Setup Canvas Grid Math
+            const padding = 40;
+            const cardBoxWidth = 100;
+            const cardBoxHeight = 140; 
+            const gap = 25;
+            const columns = 6;
+            const rows = Math.ceil(currentSeeds.length / columns);
+            
+            const canvasWidth = padding * 2 + (columns * cardBoxWidth) + ((columns - 1) * gap); 
+            const headerHeight = 110;
+            const rowHeight = cardBoxHeight + 45; 
+            const watermarkHeight = 30;
+            
+            const canvasHeight = padding + headerHeight + (rows * rowHeight) + watermarkHeight;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            const ctx = canvas.getContext('2d');
+
+            // 3. Draw Background
+            ctx.fillStyle = '#12181b';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            // 4. Draw Header Titles
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#00b4d8';
+            ctx.font = 'bold 36px sans-serif';
+            ctx.fillText(mainTitleText, canvasWidth / 2, padding + 35);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '18px sans-serif';
+            if (subTitleText) ctx.fillText(subTitleText, canvasWidth / 2, padding + 70);
+
+            // 5. SORT THE CARDS (Matches the UI layout)
+            const sortedSeeds = [...currentSeeds].sort((a, b) => {
+                const costA = cardDatabase[a.name]?.Cost || 0;
+                const costB = cardDatabase[b.name]?.Cost || 0;
+                if (costA !== costB) return costA - costB;
+                return a.name.localeCompare(b.name);
+            });
+
+            // Instantly load all sorted images into memory
+            const loadedImages = await Promise.all(sortedSeeds.map(seed => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous"; 
+                    const dbName = seed.name.replace(/ /g, '_');
+                    
+                    img.onload = () => resolve({ img, seed });
+                    img.onerror = () => {
+                        const imgWebp = new Image();
+                        imgWebp.crossOrigin = "anonymous";
+                        imgWebp.onload = () => resolve({ img: imgWebp, seed });
+                        imgWebp.onerror = () => resolve({ img: null, seed }); 
+                        imgWebp.src = `card_images/${dbName}.webp`;
+                    };
+                    img.src = `card_images/${dbName}.png`;
+                });
+            }));
+
+            // 6. Draw the Cards and Labels
+            loadedImages.forEach((item, index) => {
+                const col = index % columns;
+                const row = Math.floor(index / columns);
+                
+                const x = padding + (col * (cardBoxWidth + gap));
+                const y = padding + headerHeight + (row * rowHeight);
+
+                // Anti-Squish Logic
+                if (item.img) {
+                    const imgAspect = item.img.width / item.img.height;
+                    const boxAspect = cardBoxWidth / cardBoxHeight;
+                    let drawWidth, drawHeight;
+
+                    if (imgAspect > boxAspect) {
+                        drawWidth = cardBoxWidth;
+                        drawHeight = cardBoxWidth / imgAspect;
+                    } else {
+                        drawHeight = cardBoxHeight;
+                        drawWidth = cardBoxHeight * imgAspect;
+                    }
+
+                    const dx = x + (cardBoxWidth - drawWidth) / 2;
+                    const dy = y + (cardBoxHeight - drawHeight) / 2;
+
+                    ctx.drawImage(item.img, dx, dy, drawWidth, drawHeight);
+                } else {
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(x, y, cardBoxWidth, cardBoxHeight);
+                }
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 22px sans-serif';
+                ctx.fillText(`x${item.seed.count}`, x + (cardBoxWidth / 2), y + cardBoxHeight + 28);
+            });
+
+            // 7. Draw Watermark
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText('Created at pvzhvault.com', canvasWidth - padding, canvasHeight - 20);
+
+            // 8. Instantly Export & Download
+            const link = document.createElement('a');
+            const safeTitle = mainTitleText.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            link.download = `${safeTitle || 'deck'}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            btn.innerText = "Downloaded!";
+            btn.style.background = "#4CAF50"; 
+        } catch (err) {
+            console.error("Canvas generation failed: ", err);
+            btn.innerText = "Error";
+            btn.style.background = "#f44336";
+        } finally {
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = ""; 
+                btn.disabled = false;
+            }, 2000);
+        }
     });
 }
 
