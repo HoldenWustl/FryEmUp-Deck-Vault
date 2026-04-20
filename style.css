@@ -1073,15 +1073,10 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     z-index: 10;
 }
 
-.visual-card:hover img {
-    filter: drop-shadow(0 8px 15px rgba(0, 180, 216, 0.6)); /* Cyan glow on hover */
-}
-
 /* Ensure the badge stays sharp during the hover zoom */
 .card-quantity {
     z-index: 11;
 }
-
 
 
 /* Clean text-only hover effect */
@@ -1594,13 +1589,24 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     transition: opacity 0.2s ease;
 }
 
-.visual-card:hover .visual-card-controls {
-    opacity: 1; /* Reveal buttons on mouse hover */
-}
-
 /* On mobile, keep them visible permanently */
 @media (max-width: 768px) {
     .visual-card-controls {
         opacity: 1;
     }
+}
+.visual-card {
+    position: relative;
+    cursor: pointer;
+}
+
+.visual-card-controls {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.visual-card.show-controls .visual-card-controls {
+    opacity: 1;
+    pointer-events: auto;
 }

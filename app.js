@@ -1478,6 +1478,16 @@ function renderSeeds() {
     cardDiv.appendChild(controls);
     resultsContainer.appendChild(cardDiv);
 
+    cardDiv.addEventListener('click', () => {
+        const isOpen = cardDiv.classList.contains('show-controls');
+        document.querySelectorAll('.visual-card.show-controls').forEach(el => el.classList.remove('show-controls'));
+        if (!isOpen) cardDiv.classList.add('show-controls');
+    });
+
+    controls.addEventListener('click', e => {
+        e.stopPropagation();
+    });
+
     if (totalCards >= 40) {
         currentClipboardText += `${seed.count}x ${displayName}\n`;
     }
@@ -1787,7 +1797,7 @@ function triggerAICoPilot() {
     if (!chatFeed) return;
 
     if (currentSeeds.length === 0) {
-        chatFeed.innerHTML = `<div class="ai-message system">Hey! I'll help you create the best PvZ Heroes deck! Add a card to get started :)</div>`;
+        chatFeed.innerHTML = `<div class="ai-message system">Heey I'm Craaaazy Dave! I'm the best at creating amazing PvZ Heroes decks! Enter a card to get started.</div>`;
         return;
     }
 
