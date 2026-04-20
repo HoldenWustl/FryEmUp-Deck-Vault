@@ -1565,7 +1565,7 @@ const comboDictionary = [
     },
     {
         // Pineclone + Swarm
-        cards: ["Pineclone", "Shroom_for_Two"],
+        cards: ["Pineclone", "Shroom_For_Two"],
         message: "**Shroom for Two** gives you two bodies for 1 sun, perfectly setting up a massive board-wide **Pineclone** transformation."
     },
     {
@@ -1580,12 +1580,12 @@ const comboDictionary = [
     },
     {
         // Barrel + Mission
-        cards: ["Barrel_of_Deadbeards", "Final_Mission"],
+        cards: ["Barrel_Of_Deadbeards", "Final_Mission"],
         message: "**Final Mission** destroys your **Barrel of Deadbeards** to deal 4 damage, which triggers the Barrel to wipe out 1-health plants and spawn a 4/3 pirate. Pure value!"
     },
     {
         // Buddy + Pepper
-        cards: ["Lil_Buddy", "Pepper_M.D."],
+        cards: ["Li'l_Buddy", "Pepper_M.D."],
         message: "A 0-cost **Lil Buddy** instantly heals you, immediately triggering **Pepper M.D.**'s ability to give it a massive growth spurt on the exact same turn!"
     },
     {
@@ -1601,7 +1601,7 @@ const comboDictionary = [
     {
         // Spinach + Beanstalk
         cards: ["Savage_Spinach", "Typical_Beanstalk"],
-        message: "Evolving **Savage Spinach** off your Leafy **Typical Beanstalk** gives every Plant in your hand a massive +2/+2 boost. Time to drop some heavy hitters!"
+        message: "Evolving **Savage Spinach** off your Leafy **Typical Beanstalk** gives every Plant in your hand a massive +2/+2 boost."
     },
     {
         // Imp-Throwing + Toxic
@@ -1610,7 +1610,7 @@ const comboDictionary = [
     },
     {
         // Commander + Imp-Throwing
-        cards: ["Imp_Commander", "Imp-Throwing_Imp"],
+        cards: ["Imp_Commander", "Imp_Throwing_Imp"],
         message: "When **Imp-Throwing Imp** tosses buddies into empty water lanes, **Imp Commander** ensures they draw you cards every time they hit the hero. Incredible draw engine!"
     },
     {
@@ -1642,6 +1642,61 @@ const comboDictionary = [
         // Fig (Transfiguration) + Imitater
         cards: ["Fig", "Imitater"], // Change "Transfiguration" to "Fig" if that's how it is named in your cardDatabase!
         message: "Playing **Transfiguration** into an **Imitater** gives you TWO massive bodies that will both mutate into more expensive, game-ending threats at the end of the turn!"
+    },
+    {
+        // CycleCap
+        cards: ["Astro_Shroom", "Planet_of_the_Grapes"],
+        message: "**Astro-Shroom** deals damage when you play a plant, triggering **Planet of the Grapes** to draw a card, which lets you play MORE plants!"
+    },
+    {
+        // Con Man + Regifter
+        cards: ["Quickdraw_Con_Man", "Regifting_Zombie"],
+        message: "**Regifting Zombie** forces both players to draw cards, instantly triggering **Quickdraw Con Man**'s ability to burn the Plant Hero's health. Aggressive draw!"
+    },
+    {
+        // Teacher + Going Viral
+        cards: ["Teacher", "Going_Viral"],
+        message: "**Zombology Teacher** reduces the cost of tricks, making **Going Viral** incredibly cheap to play and shuffle, easily swarming the board with Frenzy-fueled zombies."
+    },
+    {
+        // Three-Nut + Garlic
+        cards: ["Three-Nut", "Garlic"],
+        message: "**Three-Nut** instantly sets any plant's attack to 3. Combine this with the massive 5-health of a 1-cost **Garlic** to create an aggressively cheap and beefy front line."
+    },
+    {
+        // Onion Rings + Lil Buddy
+        cards: ["Onion_Rings", "Li'l_Buddy"],
+        message: "**Onion Rings** turns every plant in your hand into a 4/4. Suddenly, your free **Lil Buddy** becomes a 0-cost 4/4 that still heals you. Insane value!"
+    },
+    {
+        // Cob Cannon + Lil Buddy
+        cards: ["Cob_Cannon", "Li'l_Buddy"],
+        message: "Need instant removal? Drop a 0-cost **Lil Buddy**, then immediately evolve your **Cob Cannon** on it to destroy a Zombie and leave behind a 4/6 body."
+    },
+    {
+        // Warlord + MUG
+        cards: ["Intergalactic_Warlord", "Mixed-Up_Gravedigger"],
+        message: "**Intergalactic Warlord** buffs your entire board permanently. Use **Mixed-Up Gravedigger** to hide him, and when he pops back out, he triggers his massive team-buff all over again!"
+    },
+    {
+        // Briar Rose + Poppin' Poppies
+        cards: ["Briar_Rose", "Poppin'_Poppies"],
+        message: "**Poppin' Poppies** floods the board with 1-health Lil' Buddies. With **Briar Rose** on the field, every single one of those tiny flowers becomes a lethal, zombie-destroying trap!"
+    },
+    {
+        // GTI + Fireworks
+        cards: ["Gargantuar-Throwing_Imp", "Fireworks_Zombie"],
+        message: "**Fireworks Zombie** deals 1 damage to everything, which instantly pokes your **Gargantuar-Throwing Imp** and causes him to immediately throw a massive Gargantuar onto the board!"
+    },
+    {
+        // Dr. Spacetime + Buried Treasure
+        cards: ["Dr._Spacetime", "Buried_Treasure"],
+        message: "Play **Buried Treasure** with **Dr. Spacetime** on the board. The Treasure conjures a Legendary, and Spacetime makes it cheaper. You're swimming in discounted, high-tier cards!"
+    },
+    {
+        // Galacta-Cactus + Pear Cub
+        cards: ["Galacta-Cactus", "Pear_Cub"],
+        message: "When **Galacta-Cactus** gets destroyed, its 1-damage explosion is the perfect trigger to crack open your **Pear Cub** and unleash the massive Grizzly Pear inside."
     }
 ];
 function parseCardList(cardList) {
