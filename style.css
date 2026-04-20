@@ -502,6 +502,9 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         flex-direction: column;
         align-items: flex-start;
     }
+    .extremes-grid {
+        grid-template-columns: 1fr !important; /* Stack the extremes cards on mobile */
+}
 }
 
 /* Container & Grid Setup */
@@ -517,6 +520,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     justify-content: center; 
     gap: 40px 30px;
     padding-top: 20px;
+    
 }
 
 /* Base Card Styling */
@@ -724,7 +728,6 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 #crafterView {
     max-width: 800px;
     width: 100%; /* Ensures it scales down on smaller screens */
-    box-sizing: border-box; /* Fixes container overflow */
     margin: 0 auto;
     padding: 25px;
     background: var(--bg-color);
@@ -1326,6 +1329,13 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     scrollbar-width: thin;
     scrollbar-color: var(--accent) #222;
 }
+.visual-deck-grid {
+    display: grid;
+    /* Increased from 80px to 110px to make the desktop cards much larger */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+    gap: 15px; 
+    margin-top: 15px;
+}
 /* Constrain the chart box and allow internal scrolling */
 .chart-box, 
 .canvas-wrapper {
@@ -1467,7 +1477,130 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     font-style: italic;
     margin-left: 4px;
 }
+/* Container for the whole view */
+.split-layout {
+    display: flex;
+    flex-direction: column; /* Stack on mobile */
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
+/* Base pane styling */
+.deck-pane, .ai-pane {
+    background: var(--bg-secondary, #1e1e24);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+/* AI Chat Feed specific styling */
+.ai-pane {
+    position: relative;
+    max-height: 600px; /* Keep it contained */
+}
+
+.ai-header {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.ai-chat-feed {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ai-message {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent, #4CAF50);
+    font-size: 0.9em;
+}
+
+/* Control Panel Cleanup */
+.panel-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.toggles {
+    display: flex;
+    gap: 15px;
+}
+
+.toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.finish-btn {
+    flex-grow: 1; /* Make the magic button prominent */
+    background: linear-gradient(45deg, #6b21a8, #9333ea);
+    color: white;
+}
+
+/* Desktop layout: Side-by-side */
+/* Desktop layout: Side-by-side */
+@media (min-width: 768px) {
+    .split-layout {
+        flex-direction: row; 
+        align-items: stretch;
+    }
+
+    .deck-pane {
+        flex: 7; /* Increased from 3 (Gives deck view much more space) */
+    }
+
+    .ai-pane {
+        flex: 3; /* Decreased from 2 */
+        min-width: 320px; /* Ensures the AI chat doesn't get too crushed */
+    }
+}
 @keyframes shimmerText {
     to { background-position: 200% center; }
+}
+.visual-card {
+    position: relative; /* Ensure controls attach to the card */
+}
+
+.visual-card-controls {
+    position: absolute;
+    top: 5px;
+    display: flex;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 3px;
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.visual-card:hover .visual-card-controls {
+    opacity: 1; /* Reveal buttons on mouse hover */
+}
+
+/* On mobile, keep them visible permanently */
+@media (max-width: 768px) {
+    .visual-card-controls {
+        opacity: 1;
+    }
 }

@@ -1252,8 +1252,7 @@ charts.classDominance = new Chart(ctx7, {
     }
 
 
-    // --- AI DECK BUILDER: SMART SEED MANAGEMENT ---
-// Map alphabetical class combos to their specific PvZ Heroes
+ // --- AI DECK BUILDER: SMART SEED MANAGEMENT ---
 const heroMap = {
     // Plants
     "Mega-Grow,Smarty": "Green Shadow",
@@ -1261,7 +1260,7 @@ const heroMap = {
     "Guardian,Solar": "Wall-Knight",
     "Mega-Grow,Solar": "Chompzilla",
     "Guardian,Kabloom": "Spudow",
-    "Guardian,Smarty": "Citron / Beta-Carrotina", // Both share these classes
+    "Guardian,Smarty": "Citron / Beta-Carrotina", 
     "Guardian,Mega-Grow": "Grass Knuckles",
     "Kabloom,Smarty": "Nightcap",
     "Kabloom,Mega-Grow": "Captain Combustible",
@@ -1279,53 +1278,40 @@ const heroMap = {
     "Crazy,Hearty": "Z-Mech",
     "Hearty,Sneaky": "Neptuna"
 };
+
 const plantClasses = new Set(["Mega-Grow", "Kabloom", "Smarty", "Guardian", "Solar"]);
 let currentSeeds = []; 
-let currentFaction = null; 
+let heroAnnounced = false;
+let currentFaction = null;
 let activeClasses = new Set(); 
+let currentClipboardText = "";
+let lastAddedCard = null; // Memory for AI context
 
+// UI Elements
 const seedInput = document.getElementById('seedSearchInput');
 const suggestionsBox = document.getElementById('smartSuggestions');
-const seedList = document.getElementById('seedList');
-const emptySeedMsg = document.getElementById('emptySeedMsg');
 const generateDeckBtn = document.getElementById('generateDeckBtn');
-const clearSeedsBtn = document.getElementById('clearSeedsBtn'); // NEW: Grab the Clear button
-
+const clearSeedsBtn = document.getElementById('clearSeedsBtn');
 const budgetToggle = document.getElementById('budgetToggle');
 const superBudgetToggle = document.getElementById('superBudgetToggle');
 
+// Toggles Logic
 if (budgetToggle && superBudgetToggle) {
-    // If Budget is checked, uncheck Super Budget
     budgetToggle.addEventListener('change', function() {
-        if (this.checked) {
-            superBudgetToggle.checked = false;
-        }
+        if (this.checked) superBudgetToggle.checked = false;
     });
-
-    // If Super Budget is checked, uncheck Budget
     superBudgetToggle.addEventListener('change', function() {
-        if (this.checked) {
-            budgetToggle.checked = false;
-        }
+        if (this.checked) budgetToggle.checked = false;
     });
 }
 
-// Helper: Get total number of cards currently seeded
 const getTotalCards = () => currentSeeds.reduce((sum, seed) => sum + seed.count, 0);
 
-// 1. Smart Autocomplete (Filters as you type)
+// --- 1. Smart Autocomplete ---
 seedInput.addEventListener('input', function() {
     const query = this.value.toLowerCase().trim();
     suggestionsBox.innerHTML = ''; 
 
-    // STRICT CHECK: Max 4 unique seed cards
-    if (currentSeeds.length >= 4) {
-        suggestionsBox.innerHTML = '<li style="color: #ff7b72; justify-content: center;">Maximum of 4 seed cards reached!</li>';
-        suggestionsBox.style.display = 'block';
-        return;
-    }
-
-    // STRICT CHECK: Max 40 cards total
     if (getTotalCards() >= 40) {
         suggestionsBox.innerHTML = '<li style="color: #ff7b72; justify-content: center;">Deck is full (40 cards)!</li>';
         suggestionsBox.style.display = 'block';
@@ -1347,13 +1333,16 @@ seedInput.addEventListener('input', function() {
             const cardClass = cardInfo.Class;
             const cardFaction = plantClasses.has(cardClass) ? "Plant" : "Zombie";
 
-            if (currentFaction !== null && currentFaction !== cardFaction) return; 
-            if (!activeClasses.has(cardClass) && activeClasses.size >= 2) return; 
-            if (currentSeeds.some(s => s.name === rawName)) return; 
+            if (currentFaction !== null && currentFaction !== cardFaction) return;
+            if (!activeClasses.has(cardClass) && activeClasses.size >= 2) return;
+            
+            const existing = currentSeeds.find(s => s.name === rawName);
+            if (existing && existing.count >= 4) return;
 
             const li = document.createElement('li');
             li.innerHTML = `<span>${cleanName}</span> <span class="suggestion-class">${cardClass}</span>`;
-            li.onclick = () => addSeed(rawName, cardClass, cardFaction);
+            // Add via autocomplete defaults to 4 copies
+            li.onclick = () => addSeed(rawName, cardClass, cardFaction, 4);
             suggestionsBox.appendChild(li);
             matches++;
         }
@@ -1362,22 +1351,37 @@ seedInput.addEventListener('input', function() {
     suggestionsBox.style.display = matches > 0 ? 'block' : 'none';
 });
 
-// Hide dropdown if clicked outside
 document.addEventListener('click', (e) => {
     if (e.target !== seedInput && e.target !== suggestionsBox) {
         suggestionsBox.style.display = 'none';
     }
 });
 
-// 2. Add Seed (Handles the 40-card limit)
-function addSeed(rawName, cardClass, cardFaction) {
+function addSeed(rawName, cardClass, cardFaction, requestedAmount = 4) {
     const spaceLeft = 40 - getTotalCards();
     if (spaceLeft <= 0) return;
 
-    // Add 4 copies, OR however many slots are left before hitting 40
-    const amountToAdd = Math.min(4, spaceLeft);
+    const existing = currentSeeds.find(s => s.name === rawName);
+    const currentCount = existing ? existing.count : 0;
+    const roomForThisCard = 4 - currentCount;
+    
+    // Automatically calculate how many we can actually add
+    let amountToAdd = Math.min(requestedAmount, spaceLeft, roomForThisCard);
+    if (amountToAdd <= 0) return; 
 
-    currentSeeds.push({ name: rawName, count: amountToAdd, class: cardClass, faction: cardFaction });
+    if (existing) {
+        existing.count += amountToAdd;
+    } else {
+        currentSeeds.push({ 
+            name: rawName, 
+            count: amountToAdd, 
+            class: cardClass, 
+            faction: cardFaction,
+            cost: cardDatabase[rawName].Cost 
+        });
+    }
+
+    lastAddedCard = rawName; // Update AI memory
     currentFaction = cardFaction;
     activeClasses.add(cardClass);
 
@@ -1386,49 +1390,102 @@ function addSeed(rawName, cardClass, cardFaction) {
     renderSeeds();
 }
 
-// 3. Render the UI
+// --- 2. Unified Visual Rendering ---
 function renderSeeds() {
-    seedList.innerHTML = '';
+    const resultsContainer = document.getElementById('generatedDeckList'); 
+    const tracker = document.getElementById('cardCountTracker'); 
+    const title = document.getElementById('generatedDeckTitle');
+    const copyBtn = document.getElementById('copyDeckBtn');
     const totalCards = getTotalCards();
 
+    resultsContainer.innerHTML = '';
+    resultsContainer.className = 'visual-deck-grid';
+
+    if (tracker) tracker.innerText = `${totalCards}/40`;
+
     if (currentSeeds.length === 0) {
-        seedList.appendChild(emptySeedMsg);
-        emptySeedMsg.style.display = 'block';
+        resultsContainer.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #888;">No cards added yet. Search above to begin!</div>';
         generateDeckBtn.disabled = true;
+        if (title) title.classList.add('hidden');
+        if (copyBtn) copyBtn.classList.add('hidden');
         currentFaction = null;
         activeClasses.clear();
+        lastAddedCard = null;
+        triggerAICoPilot(); 
         return;
     }
 
-    emptySeedMsg.style.display = 'none';
-    generateDeckBtn.disabled = false;
+    generateDeckBtn.disabled = totalCards >= 40;
 
-    currentSeeds.forEach(seed => {
-        const li = document.createElement('li');
-        li.className = 'seed-item';
-        const displayName = seed.name.replace(/_/g, ' '); 
+    // Handle Deck Naming & Copying if deck is full
+    if (totalCards >= 40) {
+        const classArray = Array.from(activeClasses).sort();
+        const heroName = heroMap[classArray.join(',')] || `Any ${classArray.join(' / ')} Hero`;
+        const isPlant = currentFaction === "Plant";
+        const aiDeckName = generateDeckName(currentSeeds, isPlant);
         
-        // Disable the plus button if the card is at x4 OR the deck is at 40 cards
+        if (title) {
+            title.classList.remove('hidden');
+            title.innerHTML = `
+                <div style="font-size: 1.2em; color: var(--accent); font-style: italic;">"${aiDeckName}"</div>
+                <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 5px;">A Deck for ${heroName}</div>
+            `;
+        }
+        
+        currentClipboardText = `Deck: ${aiDeckName}\nHero: ${heroName}\n\n`;
+        if (copyBtn) copyBtn.classList.remove('hidden');
+    } else {
+        if (title) title.classList.add('hidden');
+        if (copyBtn) copyBtn.classList.add('hidden');
+    }
+
+    // Sort visually
+    let displaySeeds = [...currentSeeds].sort((a, b) => {
+        const costA = cardDatabase[a.name]?.Cost || 0;
+        const costB = cardDatabase[b.name]?.Cost || 0;
+        if (costA !== costB) return costA - costB;
+        return a.name.localeCompare(b.name);
+    });
+
+    displaySeeds.forEach(seed => {
+        const displayName = seed.name.replace(/_/g, ' ');
+        const dbName = displayName.replace(/ /g, '_');
         const disablePlus = seed.count >= 4 || totalCards >= 40;
 
-        li.innerHTML = `
-            <div class="seed-info">
-                <span class="seed-name">${displayName}</span>
-                <span class="seed-meta">${seed.class}</span>
-            </div>
-            <div class="seed-controls">
-                <button class="seed-btn minus-btn" data-name="${seed.name}">-</button>
-                <span class="seed-count">${seed.count}</span>
-                <button class="seed-btn plus-btn" data-name="${seed.name}" ${disablePlus ? 'disabled' : ''}>+</button>
-            </div>
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'visual-card';
+        
+        const img = document.createElement('img');
+        img.src = `card_images/${dbName}.png`;
+        img.alt = displayName;
+        img.title = displayName;
+        img.onerror = function() { this.onerror = null; this.src = `card_images/${dbName}.webp`; };
+
+        const badge = document.createElement('div');
+        badge.className = 'card-quantity';
+        badge.textContent = `x${seed.count}`;
+
+        const controls = document.createElement('div');
+        controls.className = 'visual-card-controls';
+        controls.innerHTML = `
+            <button class="seed-btn minus-btn" data-name="${seed.name}">-</button>
+            <button class="seed-btn plus-btn" data-name="${seed.name}" ${disablePlus ? 'disabled' : ''}>+</button>
         `;
-        seedList.appendChild(li);
+
+        cardDiv.appendChild(img);
+        cardDiv.appendChild(badge);
+        cardDiv.appendChild(controls);
+        resultsContainer.appendChild(cardDiv);
+
+        if (totalCards >= 40) {
+            currentClipboardText += `${seed.count}x ${displayName}\n`;
+        }
     });
 
     attachQuantityListeners();
+    triggerAICoPilot();
 }
 
-// 4. Handle + and - logic
 function attachQuantityListeners() {
     document.querySelectorAll('.minus-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -1440,6 +1497,8 @@ function attachQuantityListeners() {
                     currentSeeds = currentSeeds.filter(s => s.name !== name);
                     activeClasses.clear();
                     currentSeeds.forEach(s => activeClasses.add(s.class));
+                    if (lastAddedCard === name) lastAddedCard = null;
+                    if (activeClasses.size < 2) heroAnnounced = false;
                 }
                 renderSeeds();
             }
@@ -1450,132 +1509,289 @@ function attachQuantityListeners() {
         btn.addEventListener('click', (e) => {
             const name = e.target.getAttribute('data-name');
             const seed = currentSeeds.find(s => s.name === name);
-            // Extra check to ensure we don't breach 40
             if (seed && seed.count < 4 && getTotalCards() < 40) {
                 seed.count++;
+                lastAddedCard = name; // Update context to the card they modified
                 renderSeeds();
             }
         });
     });
 }
 
-// 5. RESTORED: Clear All logic
 if (clearSeedsBtn) {
     clearSeedsBtn.addEventListener('click', () => {
         currentSeeds = [];
         currentFaction = null;
         activeClasses.clear();
+        lastAddedCard = null;
+        heroAnnounced = false;
         seedInput.value = '';
         renderSeeds();
     });
 }
 
-// --- AI DECK BUILDER: SYNERGY ENGINE ---
+// --- 3. CONVERSATIONAL AI CO-PILOT ---
+function triggerAICoPilot() {
+    const chatFeed = document.getElementById('aiChatFeed');
+    if (!chatFeed) return;
+
+    if (currentSeeds.length === 0) {
+        chatFeed.innerHTML = `<div class="ai-message system">Hey! I'll help you create the best PvZ Heroes deck! Add a card to get started :)</div>`;
+        return;
+    }
+
+    if (getTotalCards() >= 40) {
+         chatFeed.innerHTML = `<div class="ai-message system">Your deck is complete! You can remove cards using the '-' buttons if you want to swap things out.</div>`;
+         return;
+    }
+
+    initSynergyMatrix(); 
+    chatFeed.innerHTML = `<div class="ai-message system"><em>Analyzing synergies...</em></div>`;
+
+    setTimeout(() => {
+        const recommendations = getTopThreeRecommendations();
+        
+        if (recommendations.length === 0) {
+            chatFeed.innerHTML = `<div class="ai-message system">I can't find any more valid cards for this combination! Try removing a card.</div>`;
+            return;
+        }
+
+        const spaceLeft = 40 - getTotalCards();
+        const classArray = Array.from(activeClasses).sort();
+        const heroName = heroMap[classArray.join(',')] || `a ${classArray.join(' / ')} Hero`;
+        
+        // Map recommendations with calculated optimal copy counts
+        const recData = recommendations.map(rec => {
+            const displayName = rec.name.replace(/_/g, ' ');
+            const data = cardDatabase[rec.name];
+            let targetCopies = 3; 
+            
+            if (cardAverageCopies && cardAverageCopies[rec.name] && cardAverageCopies[rec.name].appearances > 0) {
+                targetCopies = Math.round(cardAverageCopies[rec.name].total / cardAverageCopies[rec.name].appearances);
+            }
+            // Ensure bounds
+            targetCopies = Math.min(targetCopies, spaceLeft, 4);
+            if (targetCopies < 1) targetCopies = 1;
+            
+            return { name: rec.name, displayName, data, targetCopies };
+        });
+
+        // 1. Calculate Average Play Frequency to generate smart adjectives
+        let avgFreq = 1;
+        if (Object.keys(cardFrequencies).length > 0) {
+            const sumFreq = Object.values(cardFrequencies).reduce((a, b) => a + b, 0);
+            avgFreq = sumFreq / Object.keys(cardFrequencies).length;
+        }
+
+        let aiDialogue = "";
+        
+       // 2. Build the Contextual Greeting based on last action
+        if (lastAddedCard) {
+            const lastNameClean = lastAddedCard.replace(/_/g, ' ');
+            const lastCardData = cardDatabase[lastAddedCard];
+            const lastClass = lastCardData ? lastCardData.Class : "Unknown";
+            
+            let popAdj = "a solid, well-played";
+            const myFreq = cardFrequencies[lastAddedCard] || 0;
+            if (myFreq > avgFreq * 2.5) popAdj = "a highly popular, meta-staple";
+            else if (myFreq < avgFreq * 0.4) popAdj = "a rare, spicy";
+
+            if (currentSeeds.length === 1 && currentSeeds[0].count === getTotalCards()) {
+                aiDialogue = `<strong>${lastNameClean}</strong> is ${popAdj} ${lastClass} card! <br><br>`;
+            } else if (activeClasses.size === 2 && !heroAnnounced) {
+                // Only announce this ONCE
+                aiDialogue = `This is now officially a <strong>${heroName}</strong> deck! <strong>${lastNameClean}</strong> adds some great synergy. <br><br>`;
+                heroAnnounced = true;
+            } else {
+                // Generic response for 3rd, 4th, 5th cards, etc.
+                aiDialogue = `Adding <strong>${lastNameClean}</strong> gives us a great direction! <br><br>`;
+            }
+        } else {
+             if (activeClasses.size === 2) {
+                aiDialogue = `This is a <strong>${heroName}</strong> deck! You have some great options from here.<br><br>`;
+             } else {
+                aiDialogue = `You have some great options for this <strong>${currentFaction}</strong> deck! <br><br>`;
+             }
+        }
+
+        // 3. Build the suggestion sentence smoothly
+        if (recData.length >= 3) {
+            aiDialogue += `<strong>${recData[0].displayName}</strong> would fit really well here! My 2nd choice would be <strong>${recData[1].displayName}</strong>, and my 3rd choice is <strong>${recData[2].displayName}</strong>.`;
+        } else if (recData.length > 0) {
+            aiDialogue += `<strong>${recData[0].displayName}</strong> is my top recommendation to add next!`;
+        }
+
+        // 4. Render HTML without markdown asterisks
+        let htmlString = `<div class="ai-message system" style="margin-bottom: 10px;">${aiDialogue}</div>`;
+        
+        // Create a horizontal scrollable container for the visual cards
+       // Container: Removed 'overflow-x: auto' and changed gap to fit perfectly
+        htmlString += `<div class="ai-recommendations-grid" style="display: flex; gap: 8px; justify-content: space-between; width: 100%; margin-bottom: 10px; box-sizing: border-box;">`;
+        
+       recData.forEach((rec, index) => {
+            const badgeText = index === 0 ? "Best Fit" : (index === 1 ? "2nd Choice" : "3rd Choice");
+            const badgeColor = index === 0 ? "#ffb300" : "var(--accent, #4CAF50)";
+            
+            // REMOVED: Black background and borders
+            // ADDED: height: 100% to ensure columns stretch equally
+            htmlString += `
+                <div class="ai-visual-rec" style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 5px; position: relative; height: 100%;">
+                    
+                    <span style="position: absolute; top: -5px; left: 50%; transform: translateX(-50%); background: ${badgeColor}; color: #fff; font-size: 0.65em; font-weight: bold; padding: 4px 10px; border-radius: 12px; z-index: 2; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">
+                        ${badgeText}
+                    </span>
+                    
+                    <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; margin: 12px 0 8px 0;">
+                        <img src="card_images/${rec.name}.png" alt="${rec.displayName}" title="${rec.displayName}" onerror="this.onerror=null; this.src='card_images/${rec.name}.webp';" style="max-width: 100%; max-height: 100px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.5));">
+                    </div>
+                    
+                    <button class="add-rec-btn generate-btn" data-name="${rec.name}" data-class="${rec.data.Class}" data-amount="${rec.targetCopies}" style="width: 100%; padding: 6px 0; font-size: 0.8em; font-weight: bold; margin: 0; margin-top: auto; border-radius: 6px; white-space: nowrap;">
+                        Add x${rec.targetCopies}
+                    </button>
+                    
+                </div>
+            `;
+        });
+
+        htmlString += `</div>`; // Close the flex container
+
+        chatFeed.innerHTML = htmlString;
+
+        // Attach listeners to the new AI buttons using the recommended amount
+        chatFeed.querySelectorAll('.add-rec-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const amount = parseInt(e.target.getAttribute('data-amount')) || 1;
+                addSeed(e.target.getAttribute('data-name'), e.target.getAttribute('data-class'), currentFaction, amount);
+            });
+        });
+
+    }, 50); 
+}
+
+function getTopThreeRecommendations() {
+    let candidatePool = Object.keys(cardDatabase);
+    let scoredCandidates = [];
+    
+    const rawWeight = 0.5; 
+    const affinityWeight = 0.5;
+
+    candidatePool.forEach(candidateName => {
+        const candidateData = cardDatabase[candidateName];
+        const candidateClass = candidateData.Class;
+        const candidateFaction = plantClasses.has(candidateClass) ? "Plant" : "Zombie";
+
+        if (candidateFaction !== currentFaction) return; 
+        if (!activeClasses.has(candidateClass) && activeClasses.size >= 2) return; 
+        
+        const existingCopy = currentSeeds.find(c => c.name === candidateName);
+        if (existingCopy && existingCopy.count >= 4) return;
+
+        let score = 0;
+        currentSeeds.forEach(deckCard => {
+            if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
+                const coOccurrences = synergyMatrix[candidateName][deckCard.name];
+                const candidateTotalPlays = cardFrequencies[candidateName] || 1;
+                
+                let rawSynergy = coOccurrences;
+                let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays;
+                let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
+                let classModifier = 1.0;
+                if (cardDatabase[candidateName].Class !== cardDatabase[deckCard.name].Class) {
+                    classModifier = 4.0;  
+                }
+                
+                const deckCardPlays = cardFrequencies[deckCard.name] || 1;
+                const volumeEqualizer = 1000 / deckCardPlays;
+
+                score += (blendedSynergy * classModifier * volumeEqualizer) * deckCard.count;
+            }
+        });
+
+        if (score > 0) {
+            scoredCandidates.push({ name: candidateName, score: score });
+        }
+    });
+
+    scoredCandidates.sort((a, b) => b.score - a.score);
+    return scoredCandidates.slice(0, 3);
+}
+
+// --- 4. SYNERGY ENGINE (Background Math) ---
 let synergyMatrix = null;
 let cardFrequencies = null;
-let cardAverageCopies = null; // NEW: Track the average copies used per deck
+let cardAverageCopies = null;
 
-// 1. Build the Matrix (UPDATED WITH META-AWARENESS TIME WEIGHTS & AVERAGE COPIES)
 function initSynergyMatrix() {
-    if (synergyMatrix) return; 
+    if (synergyMatrix) return;
     synergyMatrix = {};
     cardFrequencies = {}; 
     cardAverageCopies = {}; 
 
     const decks = Object.values(fullDatabase);
-
-    // --- STEP A: Find the date thresholds ---
-    // Extract all valid timestamps, fallback to 0 if missing/invalid
     const deckTimestamps = decks.map(d => {
         const time = d.upload_date ? new Date(d.upload_date).getTime() : 0;
         return isNaN(time) ? 0 : time;
     });
-
-    // Sort ascending (oldest first, newest last)
+    
     deckTimestamps.sort((a, b) => a - b);
-
     const totalDecks = deckTimestamps.length;
-    // Find the timestamp boundaries for our percentiles
-    const threshold50 = deckTimestamps[Math.floor(totalDecks * 0.50)]; // 50th percentile
-    const threshold05 = deckTimestamps[Math.floor(totalDecks * 0.95)]; // 95th percentile (Top 5%)
+    const threshold50 = deckTimestamps[Math.floor(totalDecks * 0.50)];
+    const threshold05 = deckTimestamps[Math.floor(totalDecks * 0.95)];
 
-    // --- STEP B: Build the matrix using weighted values ---
     decks.forEach(deck => {
-        
-        let deckWeight = 0.2; // Oldest 50% of decks are only worth 1/5th of a point!
-        
+        let deckWeight = 0.2; 
         const time = deck.upload_date ? new Date(deck.upload_date).getTime() : 0;
         const validTime = isNaN(time) ? 0 : time;
 
         if (validTime >= threshold05) {
-            deckWeight = 4.0; // Top 5% most recent decks count for 4.0x!
+            deckWeight = 4.0; 
         } else if (validTime >= threshold50) {
-            deckWeight = 1.0; // Top 50% most recent decks count as standard 1x
+            deckWeight = 1.0; 
         }
 
-        // --- THE FIX: Parse BOTH the count and the name ---
         const parsedCards = deck.cards.map(c => {
             const firstSpace = c.indexOf(' ');
-            
-            // Handles "x3", "3x", or "3". Strips the "x" and converts to integer.
             const countStr = c.substring(0, firstSpace).replace(/x/i, '');
             const count = parseInt(countStr) || 1; 
-            
-            // Everything after the first space is the card name
             const cardName = c.substring(firstSpace + 1).trim();
-            
             return { name: cardName, count: count };
         });
 
-        // Map just the names for the synergy loops below
         const cleanCards = parsedCards.map(pc => pc.name);
 
-        // --- Track Frequencies AND Average Copies ---
         parsedCards.forEach(card => {
-            // 1. Tally how many decks each card appears in overall
             cardFrequencies[card.name] = (cardFrequencies[card.name] || 0) + deckWeight;
-
-            // 2. Track total copies played to find the average per deck
             if (!cardAverageCopies[card.name]) {
                 cardAverageCopies[card.name] = { total: 0, appearances: 0 };
             }
-            
-            // Multiply by weight so modern deck copy counts influence the average more heavily
             cardAverageCopies[card.name].total += (card.count * deckWeight);
             cardAverageCopies[card.name].appearances += deckWeight;
         });
 
-        // --- STEP C: Build the Synergy Matrix ---
         for (let i = 0; i < cleanCards.length; i++) {
             const cardA = cleanCards[i];
             if (!synergyMatrix[cardA]) synergyMatrix[cardA] = {};
             
             for (let j = 0; j < cleanCards.length; j++) {
-                if (i === j) continue; 
+                if (i === j) continue;
                 const cardB = cleanCards[j];
-                
-                // Add the weight instead of just "1"
                 synergyMatrix[cardA][cardB] = (synergyMatrix[cardA][cardB] || 0) + deckWeight;
             }
         }
     });
 }
 
-// 2. Generate the Deck
+// --- 5. FINISH FOR ME (Auto-Generate Remaining) ---
 generateDeckBtn.addEventListener('click', () => {
-    initSynergyMatrix(); // Ensure matrix is ready
-    
-    // Disable button to prevent spam clicks
+    initSynergyMatrix(); 
     generateDeckBtn.disabled = true;
     generateDeckBtn.innerText = "Calculating Synergies...";
 
-    // Use a tiny timeout to allow the button text to update before the heavy math freezes the UI
     setTimeout(() => {
-        const finalDeck = buildOptimizedDeck();
-        renderGeneratedDeck(finalDeck);
-        
-        generateDeckBtn.disabled = false;
-        generateDeckBtn.innerText = "Generate Deck";
+        currentSeeds = buildOptimizedDeck(); 
+        lastAddedCard = null; // Clear context so AI summarizes full deck
+        renderSeeds(); 
+        generateDeckBtn.innerText = "Finish For Me ✨";
     }, 50);
 });
 
@@ -1586,13 +1802,9 @@ function buildOptimizedDeck() {
     
     const rawWeight = 0.2 + (Math.random() * 0.40);
     const affinityWeight = 1.0 - rawWeight;
-    
-    // Check Budget Modes
-    const budgetToggle = document.getElementById('budgetToggle');
-    const superBudgetToggle = document.getElementById('superBudgetToggle');
     const isBudget = budgetToggle ? budgetToggle.checked : false;
     const isSuperBudget = superBudgetToggle ? superBudgetToggle.checked : false;
-    
+
     while (true) {
         let totalCards = workingDeck.reduce((sum, c) => sum + c.count, 0);
         if (totalCards >= 40) break;
@@ -1605,9 +1817,7 @@ function buildOptimizedDeck() {
 
         let bestCard = null;
         let bestScore = -1;
-
         let candidatePool = Object.keys(cardDatabase);
-        
         const slotsLeft = 40 - totalCards;
         const currentOrphans = workingDeck.filter(c => c.count === 1).length;
 
@@ -1627,79 +1837,62 @@ function buildOptimizedDeck() {
             const currentCopies = existingCopy ? existingCopy.count : 0;
             if (currentCopies >= 4) return; 
 
-            // --- BUDGET & SUPER BUDGET FILTERS ---
             if (isBudget || isSuperBudget) {
                 const rarity = candidateData.Rarity;
                 if (rarity === "Legendary") return; 
 
                 if (rarity === "Super-Rare" || rarity === "Event") {
                     if (isSuperBudget) {
-                        // Hard Cap: Absolutely no more than 4 expensive cards total
                         if (expensiveCount >= 4) return;
-                        
-                        // Soft Ceiling: Once we have ANY expensive cards, do not add NEW unique ones.
-                        // Force the AI to upgrade the existing one to a playset.
                         if (currentCopies === 0 && expensiveCount > 0) return;
                     } else {
-                        // Standard Budget: Allow up to ~20, block new ones after 13
-                        if (currentCopies === 0 && expensiveCount > 13) return; 
+                        if (currentCopies === 0 && expensiveCount > 13) return;
                     }
                 }
             }
 
             let score = 0;
+            workingDeck.forEach(deckCard => {
+                if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
+                    const coOccurrences = synergyMatrix[candidateName][deckCard.name];
+                    const candidateTotalPlays = cardFrequencies[candidateName] || 1;
+                    
+                    let rawSynergy = coOccurrences;
+                    let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays; 
+                    let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
+                    
+                    let classModifier = 1.0;
+                    if (cardDatabase[candidateName].Class !== cardDatabase[deckCard.name].Class) {
+                        classModifier = 4.0;  
+                    }
 
-         workingDeck.forEach(deckCard => {
-    if (synergyMatrix && synergyMatrix[candidateName] && synergyMatrix[candidateName][deckCard.name]) {
-        const coOccurrences = synergyMatrix[candidateName][deckCard.name];
-        const candidateTotalPlays = cardFrequencies[candidateName] || 1;
-        
-        // 1. Calculate pure mathematical synergies FIRST
-        let rawSynergy = coOccurrences;
-        let affinitySynergy = (coOccurrences * coOccurrences) / candidateTotalPlays; 
-        
-        let blendedSynergy = (rawSynergy * rawWeight) + (affinitySynergy * affinityWeight);
-        
-        // 2. Determine the structural bias modifier (Cross-Class fix)
-        let classModifier = 1.0;
-        if (cardDatabase[candidateName].Class !== cardDatabase[deckCard.name].Class) {
-            classModifier = 4.0;  
-        }
+                    const deckCardPlays = cardFrequencies[deckCard.name] || 1;
+                    const volumeEqualizer = 1000 / deckCardPlays; 
+                    const isOriginalSeed = currentSeeds.some(s => s.name === deckCard.name);
 
-        // --- THE NEW FIX: Equalize the Voting Power ---
-        // Scale the vote inversely to the deckCard's popularity so 
-        // generic popular cards don't drown out niche synergy cards.
-        const deckCardPlays = cardFrequencies[deckCard.name] || 1;
-        const volumeEqualizer = 1000 / deckCardPlays; 
-
-        const isOriginalSeed = currentSeeds.some(s => s.name === deckCard.name);
-
-        // 3. Apply modifiers to the blended synergy linearly
-        score += (blendedSynergy * classModifier * volumeEqualizer) * deckCard.count * (isOriginalSeed ? 3 : 1);
-    }
-});
+                    score += (blendedSynergy * classModifier * volumeEqualizer) * deckCard.count * (isOriginalSeed ? 3 : 1);
+                }
+            });
 
             if (score === 0) score = 0.1;
 
-            let avgCopies = 3; 
+            let avgCopies = 3;
             if (cardAverageCopies && cardAverageCopies[candidateName]) {
                 avgCopies = cardAverageCopies[candidateName].total / cardAverageCopies[candidateName].appearances;
             }
 
             let consistencyMultiplier = 1.0;
-
             if (currentCopies === 1) {
-                consistencyMultiplier = 75.0; 
+                consistencyMultiplier = 75.0;
             } else if (currentCopies === 2) {
-                consistencyMultiplier = 1.5; 
+                consistencyMultiplier = 1.5;
             }
 
             if (currentCopies >= Math.round(avgCopies)) {
-                consistencyMultiplier *= 0.5; 
+                consistencyMultiplier *= 0.5;
             }
 
             score *= consistencyMultiplier;
-
             if (score > bestScore) {
                 bestScore = score;
                 bestCard = candidateName;
@@ -1720,61 +1913,33 @@ function buildOptimizedDeck() {
                 workingClasses.add(cardDatabase[bestCard].Class);
             }
         } else {
-            break; 
+            break;
         }
     }
     return workingDeck;
 }
 
-// 4. Render the Resulting Deck (Updated with Faction Mana Symbols)
-// --- "PSEUDO-AI" DECK NAMING ENGINE (EXPANDED) ---
+// --- 6. NAMING & COPY LOGIC ---
 function generateDeckName(deck, isPlant) {
-    // Faction-specific adjectives
-    const plantAdjectives = [
-        "Blooming", "Verdant", "Photosynthetic", "Savage", "Radiant", 
-        "Overgrown", "Rooted", "Spicy", "Leafy", "Sun-Soaked", 
-        "Vengeful", "Primal", "Flourishing", "Thorny", "Botanical", 
-        "Wild", "Untamed", "Raging", "Solar", "Fierce", "Bark-Biting", 
-        "Bountiful", "Vibrant", "Enraged", "Majestic", "Vineswept"
-    ];
+    const plantAdjectives = ["Blooming", "Verdant", "Photosynthetic", "Savage", "Radiant", "Overgrown", "Rooted", "Spicy", "Leafy", "Sun-Soaked", "Vengeful", "Primal", "Flourishing", "Thorny", "Botanical", "Wild", "Untamed", "Raging", "Solar", "Fierce", "Bark-Biting", "Bountiful", "Vibrant", "Enraged", "Majestic", "Vineswept"];
+    const zombieAdjectives = ["Undead", "Toxic", "Gargantuan", "Vicious", "Ruthless", "Chaotic", "Dastardly", "Sneaky", "Brain-Hungry", "Galvanized", "Necrotic", "Ghastly", "Mad", "Cryptic", "Shambling", "Bizarre", "Mechanical", "Grotesque", "Apocalyptic", "Relentless", "Monstrous", "Vile", "Cybernetic", "Diabolical", "Mutated", "Stinky"];
+    const nouns = ["Assault", "Synergy", "Brigade", "Beatdown", "Control", "Swarm", "Uprising", "Horde", "Protocol", "Rush", "Aggro", "Tempo", "Engine", "Onslaught", "Vanguard", "Tactics", "Ambush", "March", "Legion", "Blitz", "Rebellion", "Syndicate", "Empire", "Invasion", "Cartel", "Offensive"];
     
-    const zombieAdjectives = [
-        "Undead", "Toxic", "Gargantuan", "Vicious", "Ruthless", 
-        "Chaotic", "Dastardly", "Sneaky", "Brain-Hungry", "Galvanized", 
-        "Necrotic", "Ghastly", "Mad", "Cryptic", "Shambling", 
-        "Bizarre", "Mechanical", "Grotesque", "Apocalyptic", "Relentless", 
-        "Monstrous", "Vile", "Cybernetic", "Diabolical", "Mutated", "Stinky"
-    ];
-    
-    // Playstyle nouns
-    const nouns = [
-        "Assault", "Synergy", "Brigade", "Beatdown", "Control", 
-        "Swarm", "Uprising", "Horde", "Protocol", "Rush", 
-        "Aggro", "Tempo", "Engine", "Onslaught", "Vanguard", 
-        "Tactics", "Ambush", "March", "Legion", "Blitz", 
-        "Rebellion", "Syndicate", "Empire", "Invasion", "Cartel", "Offensive"
-    ];
-
-    // Find the "Boss Monster" (a prominent card you have 3 or 4 copies of)
     const coreCards = deck.filter(c => c.count >= 3);
     let signatureCardName = "Mystery";
     
     if (coreCards.length > 0) {
-        // Pick a random core card to be the star
         const randomCore = coreCards[Math.floor(Math.random() * coreCards.length)];
         signatureCardName = randomCore.name.replace(/_/g, ' ');
     } else {
-        // Fallback: just grab the most expensive card
         const highestCost = deck.reduce((prev, current) => (prev.cost > current.cost) ? prev : current);
         signatureCardName = highestCost.name.replace(/_/g, ' ');
     }
 
-    // Pick random words
     const prefixes = isPlant ? plantAdjectives : zombieAdjectives;
     const adj = prefixes[Math.floor(Math.random() * prefixes.length)];
     const noun = nouns[Math.floor(Math.random() * nouns.length)];
 
-    // Randomize the format of the title
     const formats = [
         `The ${signatureCardName} ${noun}`,
         `${adj} ${signatureCardName}`,
@@ -1791,113 +1956,26 @@ function generateDeckName(deck, isPlant) {
         `Beware the ${signatureCardName}`,
         `Secret ${signatureCardName} Society`,
         `${signatureCardName} and Friends`,
-        `The ${adj} ${noun}` // Example: "The Toxic Swarm"
+        `The ${adj} ${noun}` 
     ];
-
     return formats[Math.floor(Math.random() * formats.length)];
 }
 
-
-// 4. Render the Resulting Deck (UPDATED WITH NAMING ENGINE)
-// Variable to store the formatted text for the clipboard
-let currentClipboardText = "";
-
-function renderGeneratedDeck(deck) {
-    const resultsContainer = document.getElementById('generatedDeckList');
-    const title = document.getElementById('generatedDeckTitle');
-    const copyBtn = document.getElementById('copyDeckBtn');
-    
-    // Clean out previous results and apply our perfect grid CSS class!
-    resultsContainer.innerHTML = '';
-    resultsContainer.className = 'visual-deck-grid'; // Reuses the modal grid layout!
-    title.classList.remove('hidden');
-
-    // Sort by Cost, then Alphabetical
-    deck.sort((a, b) => {
-        const costA = cardDatabase[a.name].Cost;
-        const costB = cardDatabase[b.name].Cost;
-        if (costA !== costB) return costA - costB;
-        return a.name.localeCompare(b.name);
+const copyDeckBtn = document.getElementById('copyDeckBtn');
+if (copyDeckBtn) {
+    copyDeckBtn.addEventListener('click', (e) => {
+        if (!currentClipboardText) return;
+        navigator.clipboard.writeText(currentClipboardText).then(() => {
+            const btn = e.target;
+            btn.innerText = "Copied!";
+            btn.style.background = "#4CAF50"; 
+            setTimeout(() => {
+                btn.innerText = "Copy to Clipboard";
+                btn.style.background = ""; 
+            }, 2000);
+        }).catch(err => console.error("Failed to copy text: ", err));
     });
-
-    // --- IDENTIFY THE HERO ---
-    const classArray = Array.from(new Set(deck.map(c => c.class))).sort();
-    const classKey = classArray.join(',');
-    const heroName = heroMap[classKey] || `Any ${classArray.join(' / ')} Hero`;
-
-    // --- GENERATE THE AI NAME ---
-    const isPlant = currentFaction === "Plant";
-    const aiDeckName = generateDeckName(deck, isPlant);
-
-    // Update Title with the AI Name AND the Hero
-    title.innerHTML = `
-        <div style="font-size: 1.2em; color: var(--accent); font-style: italic;">"${aiDeckName}"</div>
-        <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 5px;">A Deck for ${heroName}</div>
-    `;
-
-    // --- START BUILDING THE CLIPBOARD STRING ---
-    currentClipboardText = `Deck: ${aiDeckName}\nHero: ${heroName}\n\n`;
-
-    // Build the visual cards
-    deck.forEach(card => {
-        // Handle names safely (clipboard wants spaces, image paths want underscores)
-        const displayName = card.name.replace(/_/g, ' '); 
-        const dbName = displayName.replace(/ /g, '_'); 
-
-        // Create the card container
-        const cardDiv = document.createElement('div');
-        cardDiv.className = 'visual-card'; // Reuses the hover and drop-shadow styling
-
-        // Create the image
-        const img = document.createElement('img');
-        img.src = `card_images/${dbName}.png`;
-        img.alt = displayName;
-        img.title = displayName; // Shows the name on hover
-        
-        // Fallback for .webp
-        img.onerror = function() {
-            this.onerror = null; 
-            this.src = `card_images/${dbName}.webp`;
-        };
-
-        // Create the sleek bottom-left badge
-        const badge = document.createElement('div');
-        badge.className = 'card-quantity';
-        badge.textContent = `x${card.count}`;
-
-        // Put it all together
-        cardDiv.appendChild(img);
-        cardDiv.appendChild(badge);
-        resultsContainer.appendChild(cardDiv);
-
-        // --- ADD CARD TO CLIPBOARD STRING ---
-        currentClipboardText += `${card.count}x ${displayName}\n`;
-    });
-
-    // Show the copy button and reset its text just in case
-    copyBtn.classList.remove('hidden');
-    copyBtn.innerText = "Copy to Clipboard";
 }
-
-// --- ADD THE CLICK LISTENER ---
-document.getElementById('copyDeckBtn').addEventListener('click', (e) => {
-    if (!currentClipboardText) return;
-
-    // Use the modern Clipboard API
-    navigator.clipboard.writeText(currentClipboardText).then(() => {
-        // Give the user visual feedback!
-        const btn = e.target;
-        btn.innerText = "Copied!";
-        btn.style.background = "#4CAF50"; // Turn it green briefly
-
-        setTimeout(() => {
-            btn.innerText = "Copy to Clipboard";
-            btn.style.background = ""; // Reset to your CSS class default
-        }, 2000);
-    }).catch(err => {
-        console.error("Failed to copy text: ", err);
-    });
-});
 
 // --- ROUTING LOGIC ---
 

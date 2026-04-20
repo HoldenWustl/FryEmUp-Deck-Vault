@@ -286,47 +286,66 @@
             </div>
         </section>
 
-        <section id="crafterView" class="hidden">
-            <div class="crafter-header">
-                <h2>Deck Builder <span class="version-effect">2.5</span></h2>
-                <p>Select up to 4 different seed cards. The engine will build the rest of your deck!</p>
-            </div>
-
-            <div class="crafter-input-container" style="position: relative;">
-                <input type="text" id="seedSearchInput" placeholder="Type a card name to add..." autocomplete="off">
-                <ul id="smartSuggestions" class="suggestions-dropdown" style="display: none;"></ul>
-            </div>
-
-            <div class="crafter-seeds-container">
-                <h3>Your Seed Cards:</h3>
-                <ul id="seedList" class="seed-list">
-                    <li id="emptySeedMsg" class="empty-msg">No seeds selected yet. Type a card above!</li>
-                </ul>
-            </div>
-
-           <div class="crafter-controls">
-    <button id="generateDeckBtn" class="generate-btn" disabled>Generate Deck</button>
-    <button id="clearSeedsBtn" class="clear-btn">Clear All</button>
+        <section id="crafterView" class="split-layout hidden">
     
-    <div style="display: flex; align-items: center; margin-left: 15px; gap: 15px;">
-        <div style="display: flex; align-items: center; gap: 5px;">
-            <input type="checkbox" id="budgetToggle" style="cursor: pointer;">
-            <label for="budgetToggle" style="cursor: pointer; font-weight: bold;">Budget</label>
+    <div class="deck-pane">
+        <div class="crafter-header">
+            <h2><span class="version-effect">Deck Builder</span></h2>
+            <p>Add cards manually, or let the AI finish the deck for you!</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 5px;">
-            <input type="checkbox" id="superBudgetToggle" style="cursor: pointer;">
-            <label for="superBudgetToggle" style="cursor: pointer; font-weight: bold;">Super Budget</label>
+
+        <div class="crafter-input-container" style="position: relative;">
+            <input type="text" id="seedSearchInput" placeholder="Type a card name to add..." autocomplete="off">
+            <ul id="smartSuggestions" class="suggestions-dropdown" style="display: none;"></ul>
+        </div>
+
+        <div class="crafter-seeds-container">
+            <h3>Current Deck: <span id="cardCountTracker">0/40</span></h3>
+            <ul id="seedList" class="seed-list">
+                <li id="emptySeedMsg" class="empty-msg">No cards added yet. Type a card above!</li>
+            </ul>
+        </div>
+
+        <div class="crafter-controls panel-controls">
+            <div class="toggles">
+                <div class="toggle-group">
+                    <input type="checkbox" id="budgetToggle">
+                    <label for="budgetToggle">Budget</label>
+                </div>
+                <div class="toggle-group">
+                    <input type="checkbox" id="superBudgetToggle">
+                    <label for="superBudgetToggle">Super Budget</label>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="clearSeedsBtn" class="clear-btn">Clear All</button>
+                <button id="generateDeckBtn" class="generate-btn finish-btn" disabled>Finish For Me ✨</button>
+            </div>
+        </div>
+        
+        <div class="crafter-results-container">
+            <h3 id="generatedDeckTitle" class="hidden">Final Deck</h3>
+            <div id="generatedDeckList" class="generated-deck-grid"></div>
+            <button id="copyDeckBtn" class="generate-btn hidden" style="margin-top: 15px; width: 100%;">Copy to Clipboard</button>
         </div>
     </div>
-</div>
 
-            <div class="crafter-results-container">
-                <h3 id="generatedDeckTitle" class="hidden">Generated Deck</h3>
-                <div id="generatedDeckList" class="generated-deck-grid">
-                </div>
-                <button id="copyDeckBtn" class="generate-btn hidden" style="margin-top: 15px; width: 100%;">Copy to Clipboard</button>
+    <div class="ai-pane">
+        <div class="ai-header" style="display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px;">
+            <img src="crazydave.webp" alt="Crazy Dave" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; object-position: top center; background: #ddd; border: 2px solid #4CAF50;">
+            
+            <h3 style="margin: 0;">Crazy Dave</h3>
+        </div>
+        
+        <div class="ai-chat-feed" id="aiChatFeed">
+            <div class="ai-message system">
+                Hey! I'll help you create the best PvZ Heroes deck! Add a card to get started :)
             </div>
-        </section>
+        </div>
+    </div>
+
+</section>
 
       <section id="gamesView" class="hidden">
     <div class="crafter-header" style="text-align: center; margin-bottom: 20px;">
