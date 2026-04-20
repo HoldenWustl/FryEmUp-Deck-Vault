@@ -15,7 +15,7 @@
             <h1>PvZH Deck Vault</h1>
             <p>Browsing <span id="deckCount" class="highlight">...</span> <span id="randomAdjective">glorious</span> PvZ
                 Heroes decks <button id="infoBtn" class="info-btn">?</button></p>
-            <p class="last-updated">Last updated: Apr 14, 2026</p>
+            <p class="last-updated">Last updated: Apr 19, 2026</p>
 
             <div id="controls" class="controls-container">
                 <div id="searchWrapper">
@@ -331,17 +331,46 @@
     </div>
 
     <div class="ai-pane">
-        <div class="ai-header" style="display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px;">
+        <div class="ai-header" style="display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px;">
             <img src="crazydave.webp" alt="Crazy Dave" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; object-position: top center; background: #ddd; border: 2px solid #4CAF50;">
-            
             <h3 style="margin: 0;">Crazy Dave</h3>
         </div>
         
-        <div class="ai-chat-feed" id="aiChatFeed">
-            <div class="ai-message system">
-                Hey! I'll help you create the best PvZ Heroes deck! Add a card to get started :)
+        <div id="deckStatsHud" style="display: none; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05);">
+            
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 0.7em; color: var(--text-secondary); text-transform: uppercase; font-weight: bold; margin-bottom: 5px;">Mana Curve</div>
+                <div id="manaCurveChart" style="display: flex; align-items: flex-end; justify-content: space-between; height: 40px; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 2px;">
+                    </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.65em; color: #888; margin-top: 2px;">
+                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6+</span>
+                </div>
             </div>
+
+            <div style="display: flex; gap: 15px;">
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: var(--text-secondary); font-weight: bold; margin-bottom: 4px;">
+                        <span>Speed: <span id="deckSpeedLabel" style="color: #fff;">Midrange</span></span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: linear-gradient(90deg, #ff4b4b, #ffb300, #4CAF50, #2196F3); border-radius: 4px; position: relative;">
+                        <div id="speedPointer" style="position: absolute; top: -3px; left: 50%; width: 4px; height: 14px; background: #fff; border-radius: 2px; box-shadow: 0 0 4px #000; transition: left 0.3s ease;"></div>
+                    </div>
+                </div>
+
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: var(--text-secondary); font-weight: bold; margin-bottom: 4px;">
+                        <span>Synergy Score</span>
+                        <span id="synergyPercent" style="color: #ffb300;">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div id="synergyFill" style="height: 100%; width: 0%; background: #ffb300; transition: width 0.4s ease;"></div>
+                    </div>
+                </div>
+            </div>
+
         </div>
+        <div class="ai-chat-feed" id="aiChatFeed">
+            </div>
     </div>
 
 </section>

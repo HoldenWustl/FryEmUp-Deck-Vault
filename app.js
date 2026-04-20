@@ -1484,6 +1484,7 @@ function renderSeeds() {
 
     attachQuantityListeners();
     triggerAICoPilot();
+    updateDeckStats();
 }
 
 function attachQuantityListeners() {
@@ -1527,6 +1528,7 @@ if (clearSeedsBtn) {
         heroAnnounced = false;
         seedInput.value = '';
         renderSeeds();
+        if (typeof updateDeckStats === 'function') updateDeckStats();
     });
 }
 // --- SPECIFIC COMBO CALLOUTS ---
@@ -1617,6 +1619,123 @@ const comboDictionary = [
         message: "Playing **Transfiguration** into an **Imitater** gives you TWO massive bodies that will both mutate into more expensive, game-ending threats at the end of the turn!"
     }
 ];
+
+// --- LIVE DECK ANALYTICS ENGINE ---
+function updateDeckStats() {
+    const hud = document.getElementById('deckStatsHud');
+    if (!hud || getTotalCards() === 0) {
+        if (hud) hud.style.display = 'none';
+        return;
+    }
+    
+    hud.style.display = 'block';
+
+    let totalCards = 0;
+    let totalCost = 0;
+    let curve = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, "6+": 0 };
+    
+    let totalConnection = 0;
+
+    // 1. Crunch the Numbers
+    currentSeeds.forEach(seedA => {
+        totalCards += seedA.count;
+        
+        const cost = parseInt(seedA.cost) || 1; 
+        totalCost += (cost * seedA.count);
+
+        // Populate Curve
+        if (cost <= 1) curve[1] += seedA.count;
+        else if (cost === 2) curve[2] += seedA.count;
+        else if (cost === 3) curve[3] += seedA.count;
+        else if (cost === 4) curve[4] += seedA.count;
+        else if (cost === 5) curve[5] += seedA.count;
+        else curve["6+"] += seedA.count;
+
+        // --- NEW: COSINE SIMILARITY (True Exclusive Synergy) ---
+        let cardBestConnection = 0;
+        const freqA = cardFrequencies[seedA.name] || 1;
+
+        currentSeeds.forEach(seedB => {
+            if (seedA.name !== seedB.name) {
+                const coOccurrences = (synergyMatrix && synergyMatrix[seedA.name] && synergyMatrix[seedA.name][seedB.name]) 
+                                      ? synergyMatrix[seedA.name][seedB.name] : 0;
+                
+                const freqB = cardFrequencies[seedB.name] || 1;
+                
+                // Cosine Similarity Formula: coOccurrences / sqrt(freqA * freqB)
+                // This severely penalizes cards that are just "generic good stuff" 
+                // and heavily rewards strict combos.
+                const cosineSimilarity = coOccurrences / Math.sqrt(freqA * freqB);
+                
+                if (cosineSimilarity > cardBestConnection) {
+                    cardBestConnection = cosineSimilarity;
+                }
+            }
+        });
+        
+        totalConnection += (cardBestConnection * seedA.count);
+    });
+
+    // 2. Render Mana Curve Histogram
+    const chart = document.getElementById('manaCurveChart');
+    chart.innerHTML = '';
+    const maxCurveVal = Math.max(...Object.values(curve), 1); 
+
+    Object.values(curve).forEach(count => {
+        const heightPct = (count / maxCurveVal) * 100;
+        const bar = document.createElement('div');
+        bar.style.flex = "1";
+        bar.style.margin = "0 2px";
+        bar.style.backgroundColor = count > 0 ? "var(--accent, #4CAF50)" : "rgba(255,255,255,0.05)";
+        bar.style.height = count > 0 ? `${Math.max(heightPct, 5)}%` : "2px"; 
+        bar.style.borderRadius = "3px 3px 0 0";
+        bar.style.transition = "height 0.3s ease";
+        bar.title = `${count} cards`;
+        chart.appendChild(bar);
+    });
+
+    // 3. Render Deck Speed (Average Cost Slider)
+    const avgCost = totalCost / totalCards;
+    let speedLabel = "Midrange";
+    let leftPercent = 50;
+
+    if (avgCost <= 2.2) { speedLabel = "Aggro/Rush"; leftPercent = (avgCost / 2.2) * 33; }
+    else if (avgCost > 2.2 && avgCost <= 3.5) { speedLabel = "Midrange"; leftPercent = 33 + (((avgCost - 2.2) / 1.3) * 33); }
+    else { speedLabel = "Control/Late"; leftPercent = 66 + (Math.min((avgCost - 3.5) / 2.5, 1) * 34); }
+
+    document.getElementById('deckSpeedLabel').innerText = speedLabel;
+    document.getElementById('speedPointer').style.left = `calc(${leftPercent}% - 2px)`;
+
+    // 4. Render True Synergy Score
+    let synergyScore = 0;
+    if (totalCards > 0 && currentSeeds.length > 1) {
+        let rawAvg = totalConnection / totalCards;
+        
+        // Apply an exponential curve to the raw cosine average. 
+        // A truly cohesive meta deck usually hits ~0.6 to 0.7 Cosine.
+        synergyScore = Math.min(Math.round(Math.pow(rawAvg, 0.85) * 135), 100);
+        
+        // Dampen the score slightly if the deck is super tiny (less than 6 cards)
+        // This prevents 2 isolated cards from immediately claiming 100% deck cohesion.
+        if (totalCards < 6) {
+            synergyScore = Math.round(synergyScore * (totalCards / 6));
+        }
+
+    } else if (totalCards === 1) {
+        synergyScore = 5; 
+    }
+
+    if (currentSeeds.length > 3 && synergyScore < 10) synergyScore = 10;
+
+    document.getElementById('synergyPercent').innerText = `${synergyScore}%`;
+    const fillBar = document.getElementById('synergyFill');
+    fillBar.style.width = `${synergyScore}%`;
+    
+    // Dynamic color shifting based on harsh Cosine grading
+    if (synergyScore >= 80) fillBar.style.background = "#e91e63"; // Pink/Mythic (Amazing)
+    else if (synergyScore >= 50) fillBar.style.background = "#4CAF50"; // Green/Good
+    else fillBar.style.background = "#ffb300"; // Yellow/Okay
+}
 // --- 3. CONVERSATIONAL AI CO-PILOT ---
 function triggerAICoPilot() {
     const chatFeed = document.getElementById('aiChatFeed');
