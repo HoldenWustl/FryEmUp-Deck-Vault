@@ -1445,15 +1445,16 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     width: 100%;
     box-sizing: border-box;   /* Keeps padding from expanding the width past 100% */
 }
-/* Gives a clean green line at the top of Plant decks */
 .deck-card.plant-deck {
-    border-top: 5px solid #4CAF50; /* Adjust color as needed */
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.3); /* Optional subtle outline */
 }
 
-/* Gives a clean purple line at the top of Zombie decks */
 .deck-card.zombie-deck {
-    border-top: 5px solid #9C27B0; /* Adjust color as needed */
+    box-shadow: 0 4px 20px rgba(156, 39, 176, 0.15);
+    border: 1px solid rgba(156, 39, 176, 0.3);
 }
+
 .version-effect {
     /* Create a gradient with the same color on the ends for seamless looping */
     background: linear-gradient(to right, #00d2ff, #3a7bd5, #00d2ff);
