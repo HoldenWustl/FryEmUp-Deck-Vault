@@ -1874,9 +1874,16 @@ function updateDeckStats() {
     const fillBar = document.getElementById('synergyFill');
     fillBar.style.width = `${synergyScore}%`;
     
-    if (synergyScore >= 80) fillBar.style.background = "#e91e63"; // Pink/Mythic
-    else if (synergyScore >= 50) fillBar.style.background = "#4CAF50"; // Green/Good
-    else fillBar.style.background = "#ffb300"; // Yellow/Okay
+   // Dynamic color shifting based on harsh Cosine grading
+    if (synergyScore >= 85) {
+        fillBar.style.background = "#e91e63"; // Pink/Mythic (Excellent)
+    } else if (synergyScore >= 70) {
+        fillBar.style.background = "#4CAF50"; // Green (Good)
+    } else if (synergyScore >= 50) {
+        fillBar.style.background = "#ffb300"; // Yellow (Mid/Okay - 50s and 60s)
+    } else {
+        fillBar.style.background = "#ff4b4b"; // Red (Bad/Scattered - under 50)
+    }
 }
 // --- 3. CONVERSATIONAL AI CO-PILOT ---
 function triggerAICoPilot() {
