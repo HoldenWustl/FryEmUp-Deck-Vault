@@ -726,6 +726,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     display: none !important;
 }
 #crafterView {
+    box-sizing: border-box;
     max-width: 800px;
     width: 100%; /* Ensures it scales down on smaller screens */
     margin: 0 auto;
