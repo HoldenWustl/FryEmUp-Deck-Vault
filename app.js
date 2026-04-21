@@ -1456,13 +1456,15 @@ function renderSeeds() {
         return a.name.localeCompare(b.name);
     });
 
-    displaySeeds.forEach(seed => {
+    displaySeeds.forEach((seed, index) => {
         const displayName = seed.name.replace(/_/g, ' ');
         const dbName = displayName.replace(/ /g, '_');
         const disablePlus = seed.count >= 4 || totalCards >= 40;
 
         const cardDiv = document.createElement('div');
-        cardDiv.className = 'visual-card';
+        // 2. ADD THE ANIMATION CLASS AND DYNAMIC DELAY
+        cardDiv.className = 'visual-card pop-animate';
+        cardDiv.style.animationDelay = `${index * 35}ms`;
         
         const img = document.createElement('img');
         img.src = `card_images/${dbName}.png`;

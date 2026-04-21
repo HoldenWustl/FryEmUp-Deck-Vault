@@ -1786,3 +1786,22 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         justify-content: center; 
     }
 }
+@keyframes cardPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.visual-card.pop-animate {
+    opacity: 0; /* Keeps cards invisible until their delay finishes */
+    animation: cardPopIn 0.25s ease-out forwards;
+}
