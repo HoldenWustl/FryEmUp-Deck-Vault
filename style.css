@@ -1781,7 +1781,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     transform: scale(1.1);
 }
 /* Apply this to all buttons, including the back button */
-#crafterBtn, #statsBtn, #gamesBtn, #backBtn {
+#crafterBtn, #statsBtn, #gamesBtn, #backBtn, #synergyBtn {
     /* 1. Prevents the button from growing to fill the flex row */
     flex: none; 
     
