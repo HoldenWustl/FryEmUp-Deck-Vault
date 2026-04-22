@@ -23,6 +23,7 @@
                 </div>
                 <button id="crafterBtn">Deck Builder</button>
                 <button id="statsBtn">View Stats</button>
+                <button id="synergyBtn">Synergy Web</button>
                 <button id="gamesBtn">Mini-Games</button>
                 <button id="backBtn" class="hidden">Back to Decks</button>
             </div>
@@ -238,49 +239,49 @@
                     </div>
 
                     <div class="chart-box extremes-box">
-                        <h3>The Deck Extremes</h3>
-                        <p class="chart-subtitle">Most extreme decks by Spark cost and Mana curve. Click to watch!</p>
+    <h3>The Deck Extremes</h3>
+    <p class="chart-subtitle">Most extreme decks by Spark cost and Mana curve. Click to watch!</p>
 
-                        <div class="extremes-grid">
+    <div class="extremes-grid">
 
-                            <div class="extreme-card whale-card">
-                                <h4 class="extreme-title">Ultimate Whale Deck</h4>
-                                <a id="mostP2wLink" href="#" target="_blank" class="extreme-link">
-                                    <img id="mostP2wImg" src="" alt="Whale Deck Thumbnail" class="extreme-img">
-                                    <p id="mostP2wDeck" class="extreme-deck-name">-</p>
-                                </a>
-                                <p id="mostP2wCost" class="extreme-cost">- Sparks</p>
-                            </div>
+        <div class="extreme-card whale-card">
+            <h4 class="extreme-title">Ultimate Whale Deck</h4>
+            <a id="mostP2wLink" href="#" target="_blank" class="video-preview extreme-preview">
+                <img id="mostP2wImg" src="" alt="Whale Deck Thumbnail" loading="lazy">
+                <div id="mostP2wDeck" class="video-title-overlay">-</div>
+            </a>
+            <p id="mostP2wCost" class="extreme-cost">- Sparks</p>
+        </div>
 
-                            <div class="extreme-card f2p-card">
-                                <h4 class="extreme-title">F2P Champion</h4>
-                                <a id="leastP2wLink" href="#" target="_blank" class="extreme-link">
-                                    <img id="leastP2wImg" src="" alt="F2P Deck Thumbnail" class="extreme-img">
-                                    <p id="leastP2wDeck" class="extreme-deck-name">-</p>
-                                </a>
-                                <p id="leastP2wCost" class="extreme-cost">- Sparks</p>
-                            </div>
+        <div class="extreme-card f2p-card">
+            <h4 class="extreme-title">F2P Champion</h4>
+            <a id="leastP2wLink" href="#" target="_blank" class="video-preview extreme-preview">
+                <img id="leastP2wImg" src="" alt="F2P Deck Thumbnail" loading="lazy">
+                <div id="leastP2wDeck" class="video-title-overlay">-</div>
+            </a>
+            <p id="leastP2wCost" class="extreme-cost">- Sparks</p>
+        </div>
 
-                            <div class="extreme-card heavy-card">
-                                <h4 class="extreme-title">Heaviest Curve</h4>
-                                <a id="heaviestLink" href="#" target="_blank" class="extreme-link">
-                                    <img id="heaviestImg" src="" alt="Heaviest Deck Thumbnail" class="extreme-img">
-                                    <p id="heaviestDeck" class="extreme-deck-name">-</p>
-                                </a>
-                                <p id="heaviestCost" class="extreme-cost">- Avg Cost</p>
-                            </div>
+        <div class="extreme-card heavy-card">
+            <h4 class="extreme-title">Heaviest Curve</h4>
+            <a id="heaviestLink" href="#" target="_blank" class="video-preview extreme-preview">
+                <img id="heaviestImg" src="" alt="Heaviest Deck Thumbnail" loading="lazy">
+                <div id="heaviestDeck" class="video-title-overlay">-</div>
+            </a>
+            <p id="heaviestCost" class="extreme-cost">- Avg Cost</p>
+        </div>
 
-                            <div class="extreme-card light-card">
-                                <h4 class="extreme-title">Lightest Curve</h4>
-                                <a id="lightestLink" href="#" target="_blank" class="extreme-link">
-                                    <img id="lightestImg" src="" alt="Lightest Deck Thumbnail" class="extreme-img">
-                                    <p id="lightestDeck" class="extreme-deck-name">-</p>
-                                </a>
-                                <p id="lightestCost" class="extreme-cost">- Avg Cost</p>
-                            </div>
+        <div class="extreme-card light-card">
+            <h4 class="extreme-title">Lightest Curve</h4>
+            <a id="lightestLink" href="#" target="_blank" class="video-preview extreme-preview">
+                <img id="lightestImg" src="" alt="Lightest Deck Thumbnail" loading="lazy">
+                <div id="lightestDeck" class="video-title-overlay">-</div>
+            </a>
+            <p id="lightestCost" class="extreme-cost">- Avg Cost</p>
+        </div>
 
-                        </div>
-                    </div>
+    </div>
+</div>
 
                 </div>
             </div>
@@ -496,6 +497,20 @@
 </div>
     
 </section>
+
+<section id="synergyView" class="hidden">
+    <div id="synergyCanvasContainer" style="width: 100%; height: calc(100vh - 80px); background-color: #0f172a; position: relative;">
+        
+        <div id="synergyLoadingOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #0f172a; z-index: 10; transition: opacity 0.5s;">
+            <div id="synergyLoadingText" style="color: #fff; font-size: 1.5rem; margin-bottom: 20px; font-weight: bold;">Analyzing 1,600 Decks...</div>
+            <div style="width: 60%; max-width: 400px; height: 12px; background: #1e293b; border-radius: 6px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
+                <div id="synergyProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #81C784); transition: width 0.1s;"></div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
     </main>
 
     <div id="infoModal" class="modal">
@@ -546,6 +561,8 @@
             </div>
     </div>
 </div>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/force-graph"></script>
     <script src="app.js"></script>
 </body>
 

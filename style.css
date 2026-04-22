@@ -1666,7 +1666,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     pointer-events: auto;
 }
 /* Target all three buttons to share the same styling */
-#crafterBtn, #statsBtn, #gamesBtn {
+#crafterBtn, #statsBtn, #gamesBtn, #synergyBtn {
     /* Layout & Alignment */
     display: inline-flex;
     align-items: center;
@@ -1688,7 +1688,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     transition: all 0.2s ease-in-out;
 }
 
-#crafterBtn:hover, #statsBtn:hover, #gamesBtn:hover {
+#crafterBtn:hover, #statsBtn:hover, #gamesBtn:hover, #synergyBtn:hover {
     background-color: var(--card-bg);
     color: var(--text-primary);
     border-color: var(--accent); 
@@ -1698,7 +1698,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     transform: translateY(-3px); 
 }
 
-#crafterBtn:active, #statsBtn:active, #gamesBtn:active {
+#crafterBtn:active, #statsBtn:active, #gamesBtn:active, #synergyBtn:active {
     /* Slight compression and return to base height when clicked */
     transform: translateY(0) scale(0.97); 
 }
@@ -1707,7 +1707,13 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     width: 100%;
     max-width: 400px; 
 }
-
+#synergyCanvasContainer {
+    width: 100%;
+    height: calc(100vh - 80px); /* Adjust '80px' based on your navbar height */
+    background-color: #0f172a; /* A deep, rich dark background makes the web 'glow' */
+    overflow: hidden;
+    position: relative;
+}
 #searchInput {
     /* The magic unit: makes the input wide enough for ~40 characters */
     width: 40ch; 
@@ -1852,3 +1858,39 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     pointer-events: none;
 }
 
+
+
+.video-preview,
+.extreme-preview {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 14px;
+    text-decoration: none;
+}
+
+.video-preview img,
+.extreme-preview img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+
+.video-title-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 8px 10px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0));
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.extreme-cost {
+    margin-top: 8px;
+}

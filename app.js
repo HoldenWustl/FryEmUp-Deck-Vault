@@ -67,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const crafterView = document.getElementById('crafterView');
     const gamesView = document.getElementById('gamesView');
 const gamesBtn = document.getElementById('gamesBtn');
+const synergyBtn = document.getElementById('synergyBtn');
+const synergyView = document.getElementById('synergyView');
 
     // --- Fetch Database ---
    // --- 1. SET UP A "DATA LOADED" FLAG ---
@@ -117,11 +119,13 @@ function handleRouting() {
     deckView.classList.add('hidden');
     statsView.classList.add('hidden');
     crafterView.classList.add('hidden');
-    gamesView.classList.add('hidden'); // <-- NEW
+    gamesView.classList.add('hidden');
     searchWrapper.classList.add('hidden');
     statsBtn.classList.add('hidden');
     crafterBtn.classList.add('hidden');
-    gamesBtn.classList.add('hidden');  // <-- NEW
+    gamesBtn.classList.add('hidden'); 
+    synergyView.classList.add('hidden');
+    synergyBtn.classList.add('hidden');
     if (typeof backBtn !== 'undefined') backBtn.classList.add('hidden');
 
     // 2. Determine what to show based on the hash
@@ -141,13 +145,22 @@ function handleRouting() {
         if (typeof backBtn !== 'undefined') backBtn.classList.remove('hidden');
         if (typeof renderGames === 'function') renderGames();
 
-    } else {
+    } 
+    else if (hash === '#synergy') { // <-- NEW ROUTE
+        synergyView.classList.remove('hidden');
+        if (typeof backBtn !== 'undefined') backBtn.classList.remove('hidden');
+        // We will define this function next!
+        if (typeof renderSynergyWeb === 'function') renderSynergyWeb();
+
+    }
+    else {
         // Default Home UI
         deckView.classList.remove('hidden');
         searchWrapper.classList.remove('hidden');
         statsBtn.classList.remove('hidden');
         crafterBtn.classList.remove('hidden');
-        gamesBtn.classList.remove('hidden'); // <-- NEW
+        gamesBtn.classList.remove('hidden');
+        synergyBtn.classList.remove('hidden');
     }
 }
     // --- Helper Functions ---
@@ -173,6 +186,7 @@ function handleRouting() {
     if (statsBtn) statsBtn.disabled = true;
     if (crafterBtn) crafterBtn.disabled = true;
     if (gamesBtn) gamesBtn.disabled = true;
+    if (synergyBtn) synergyBtn.disabled = true;
 
     setTimeout(() => {
         deckGrid.innerHTML = '';
@@ -295,6 +309,7 @@ cardEl.innerHTML = `
         if (statsBtn) statsBtn.disabled = false;
         if (crafterBtn) crafterBtn.disabled = false;
         if (gamesBtn) gamesBtn.disabled = false;
+        if (synergyBtn) synergyBtn.disabled = false;
 
     }, 50); 
 }
@@ -354,6 +369,9 @@ cardEl.innerHTML = `
     searchWrapper.classList.remove('hidden');
     statsBtn.classList.remove('hidden');
     crafterBtn.classList.remove('hidden'); // Restore the new button
+    gamesBtn.classList.remove('hidden'); // Restore the games button
+    synergyBtn.classList.remove('hidden'); // Restore the synergy button
+
 });
 
     // --- Stats Rendering Logic ---
@@ -611,36 +629,83 @@ cardEl.innerHTML = `
             return match ? match[1] : null;
         }
 
-        if (document.getElementById('mostP2wDeck') && mostExpensiveDeck && leastExpensiveDeck) {
-            // --- Existing P2W DOM Updates ---
-            const mostId = getYouTubeId(mostExpensiveDeck.youtube_url);
-            document.getElementById('mostP2wDeck').innerText = mostExpensiveDeck.name || mostExpensiveDeck.youtube_title;
-            document.getElementById('mostP2wCost').innerText = maxSparkCost.toLocaleString() + ' Sparks';
-            if (mostId) document.getElementById('mostP2wImg').src = `https://img.youtube.com/vi/${mostId}/mqdefault.jpg`;
-            document.getElementById('mostP2wLink').href = mostExpensiveDeck.youtube_url || "#";
+       function setExtremeCard({
+    linkId,
+    imgId,
+    nameId,
+    costId,
+    deck,
+    costText,
+    youtubeId
+}) {
+    const linkEl = document.getElementById(linkId);
+    const imgEl = document.getElementById(imgId);
+    const nameEl = document.getElementById(nameId);
+    const costEl = document.getElementById(costId);
 
-            const leastId = getYouTubeId(leastExpensiveDeck.youtube_url);
-            document.getElementById('leastP2wDeck').innerText = leastExpensiveDeck.name || leastExpensiveDeck.youtube_title;
-            document.getElementById('leastP2wCost').innerText = minSparkCost.toLocaleString() + ' Sparks';
-            if (leastId) document.getElementById('leastP2wImg').src = `https://img.youtube.com/vi/${leastId}/mqdefault.jpg`;
-            document.getElementById('leastP2wLink').href = leastExpensiveDeck.youtube_url || "#";
+    if (!linkEl || !imgEl || !nameEl || !costEl) return;
 
-            // --- NEW: Heaviest/Lightest DOM Updates ---
-            if (heaviestDeck && lightestDeck) {
-                const heaviestId = getYouTubeId(heaviestDeck.youtube_url);
-                document.getElementById('heaviestDeck').innerText = heaviestDeck.name || heaviestDeck.youtube_title;
-                // Using toFixed(2) to keep the average readable (e.g. "3.45 Avg Cost")
-                document.getElementById('heaviestCost').innerText = maxAvgCost.toFixed(2) + ' Avg Cost';
-                if (heaviestId) document.getElementById('heaviestImg').src = `https://img.youtube.com/vi/${heaviestId}/mqdefault.jpg`;
-                document.getElementById('heaviestLink').href = heaviestDeck.youtube_url || "#";
+    nameEl.innerText = deck.name || deck.youtube_title || '-';
+    costEl.innerText = costText;
 
-                const lightestId = getYouTubeId(lightestDeck.youtube_url);
-                document.getElementById('lightestDeck').innerText = lightestDeck.name || lightestDeck.youtube_title;
-                document.getElementById('lightestCost').innerText = minAvgCost.toFixed(2) + ' Avg Cost';
-                if (lightestId) document.getElementById('lightestImg').src = `https://img.youtube.com/vi/${lightestId}/mqdefault.jpg`;
-                document.getElementById('lightestLink').href = lightestDeck.youtube_url || "#";
-            }
-        }
+    if (youtubeId) {
+        imgEl.src = `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
+    } else {
+        imgEl.removeAttribute('src');
+    }
+
+    imgEl.alt = `${deck.name || deck.youtube_title || 'Deck'} thumbnail`;
+    linkEl.href = deck.youtube_url || "#";
+}
+if (document.getElementById('mostP2wDeck') && mostExpensiveDeck && leastExpensiveDeck) {
+    const mostId = getYouTubeId(mostExpensiveDeck.youtube_url);
+    const leastId = getYouTubeId(leastExpensiveDeck.youtube_url);
+
+    setExtremeCard({
+        linkId: 'mostP2wLink',
+        imgId: 'mostP2wImg',
+        nameId: 'mostP2wDeck',
+        costId: 'mostP2wCost',
+        deck: mostExpensiveDeck,
+        costText: maxSparkCost.toLocaleString() + ' Sparks',
+        youtubeId: mostId
+    });
+
+    setExtremeCard({
+        linkId: 'leastP2wLink',
+        imgId: 'leastP2wImg',
+        nameId: 'leastP2wDeck',
+        costId: 'leastP2wCost',
+        deck: leastExpensiveDeck,
+        costText: minSparkCost.toLocaleString() + ' Sparks',
+        youtubeId: leastId
+    });
+
+    if (heaviestDeck && lightestDeck) {
+        const heaviestId = getYouTubeId(heaviestDeck.youtube_url);
+        const lightestId = getYouTubeId(lightestDeck.youtube_url);
+
+        setExtremeCard({
+            linkId: 'heaviestLink',
+            imgId: 'heaviestImg',
+            nameId: 'heaviestDeck',
+            costId: 'heaviestCost',
+            deck: heaviestDeck,
+            costText: maxAvgCost.toFixed(2) + ' Avg Cost',
+            youtubeId: heaviestId
+        });
+
+        setExtremeCard({
+            linkId: 'lightestLink',
+            imgId: 'lightestImg',
+            nameId: 'lightestDeck',
+            costId: 'lightestCost',
+            deck: lightestDeck,
+            costText: minAvgCost.toFixed(2) + ' Avg Cost',
+            youtubeId: lightestId
+        });
+    }
+}
 
         // Prepare Data for Charts 
         const topCopied = Object.entries(cardCopies).sort((a, b) => b[1] - a[1]);
@@ -3006,6 +3071,10 @@ gamesBtn.addEventListener('click', () => { // <-- NEW
     window.location.hash = 'games';
 });
 
+synergyBtn.addEventListener('click', () => {
+    window.location.hash = 'synergy';
+});
+
 if (typeof backBtn !== 'undefined') {
     backBtn.addEventListener('click', () => {
         window.location.hash = ''; // Clearing the hash triggers the default Home UI
@@ -3873,4 +3942,264 @@ newRedactedSubmitBtn.addEventListener('click', () => {
         }
     }
 });
+}
+
+// Keep a global reference to the graph so we don't recreate it every time they click the tab
+let currentSynergyGraph = null;
+
+async function renderSynergyWeb() {
+    const container = document.getElementById('synergyCanvasContainer');
+    const overlay = document.getElementById('synergyLoadingOverlay');
+    const progressBar = document.getElementById('synergyProgressBar');
+    const progressText = document.getElementById('synergyLoadingText');
+    
+    if (!container || currentSynergyGraph) return;
+
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+
+    // Step 1: Crunch the data (Wait a frame so UI updates)
+    await new Promise(r => setTimeout(r, 50)); 
+    const graphData = buildSynergyData();
+
+    // Step 2: Preload all required images for a flawless reveal
+    progressText.innerText = `Loading ${graphData.nodes.length} Cards...`;
+    let loadedCount = 0;
+
+    const preloadImage = (node) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            const formattedName = node.id.replaceAll(' ', '_');
+            
+            // 1. If it loads successfully (whether PNG or WEBP), attach it and resolve
+            img.onload = () => {
+                node.img = img;
+                resolve();
+            };
+            
+            // 2. If it fails, check what failed
+            img.onerror = () => {
+                // If the PNG failed, let's try the WEBP!
+                // We overwrite the onerror so if the WEBP *also* fails, it just gives up and resolves (preventing a frozen loading bar)
+                img.onerror = () => {
+                    console.warn(`Missing image for: ${node.id}`);
+                    resolve(); 
+                };
+                
+                // Swap the source to WEBP
+                img.src = `card_images/${formattedName}.webp`;
+            };
+            
+            // 3. Kick off the loading process by assuming it's a PNG first
+            img.src = `card_images/${formattedName}.png`;
+        });
+    };
+
+    // Load images in parallel chunks to speed it up while updating the bar
+    const batchSize = 20;
+    for (let i = 0; i < graphData.nodes.length; i += batchSize) {
+        const batch = graphData.nodes.slice(i, i + batchSize);
+        await Promise.all(batch.map(preloadImage));
+        
+        loadedCount += batch.length;
+        const percent = Math.min(100, Math.round((loadedCount / graphData.nodes.length) * 100));
+        progressBar.style.width = `${percent}%`;
+    }
+
+    // Step 3: Fade out loading screen
+    progressText.innerText = "Weaving the Web...";
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 500); // Hide completely
+    }, 400);
+    // Keep track of the highlighted neighborhood
+    let activeNode = null;
+    const highlightNodes = new Set();
+    const highlightLinks = new Set();
+    // Step 4: Render the stunning Force-Graph
+    currentSynergyGraph = ForceGraph()(container)
+        .graphData(graphData)
+        .backgroundColor('#0f172a')
+        .nodeId('id')
+        // 1. Dynamic Link Styling
+        .linkColor(link => {
+            if (activeNode) {
+                // If in focus mode, highlight active links in bright green, hide the rest
+                return highlightLinks.has(link) ? 'rgba(76, 175, 80, 0.8)' : 'rgba(180, 200, 255, 0.02)';
+            }
+            // Default icy blue galaxy look
+            return `rgba(180, 200, 255, ${Math.min(0.6, link.weight / 25)})`;
+        })
+        .linkWidth(link => {
+            if (activeNode) {
+                return highlightLinks.has(link) ? Math.min(5, Math.max(2, link.weight / 10)) : 0.5;
+            }
+            return Math.min(3, Math.max(0.5, link.weight / 15));
+        })
+
+        // 2. THE SPECTACULAR EFFECT: Glowing Energy Particles
+        .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0) // Only animate active links
+        .linkDirectionalParticleWidth(4)
+        .linkDirectionalParticleColor(() => '#a7f3d0') // Pale green energy
+        .linkDirectionalParticleSpeed(0.006)
+
+        // 3. Interactions: The Camera Swoop & Focus State
+        .onNodeClick(node => {
+            // If they click the same node again, turn off focus mode
+            if (activeNode === node) {
+                activeNode = null;
+                highlightNodes.clear();
+                highlightLinks.clear();
+                return;
+            }
+
+            // Set the new active node and find its neighborhood
+            activeNode = node;
+            highlightNodes.clear();
+            highlightLinks.clear();
+            highlightNodes.add(node);
+            
+            graphData.links.forEach(link => {
+                if (link.source.id === node.id || link.target.id === node.id) {
+                    highlightLinks.add(link);
+                    highlightNodes.add(link.source);
+                    highlightNodes.add(link.target);
+                }
+            });
+
+            // Smoothly fly the camera to the tapped card
+            currentSynergyGraph.centerAt(node.x, node.y, 800); // 800ms pan
+            currentSynergyGraph.zoom(1.8, 800); // Zoom in closer
+        })
+        .onBackgroundClick(() => {
+            // Clicking empty space resets the view
+            activeNode = null;
+            highlightNodes.clear();
+            highlightLinks.clear();
+        })
+        
+        // Physics Setup
+        .d3Force('charge', d3.forceManyBody().strength(-200)) 
+        .d3Force('link', d3.forceLink().distance(80).id(d => d.id)) 
+        .d3Force('center', d3.forceCenter())
+        .d3Force('x', d3.forceX(0).strength(0.05)) 
+        .d3Force('y', d3.forceY(0).strength(0.05)) 
+        .d3Force('collide', d3.forceCollide(node => {
+            return Math.max(20, Math.min(50, node.popularity / 3)) + 5; 
+        }).iterations(2))
+
+        // 4. Update Node Rendering to Handle Fading
+        .nodeCanvasObject((node, ctx, globalScale) => {
+            const baseSize = Math.max(20, Math.min(50, node.popularity / 3));
+            
+            // Check if we should dim this card
+            const isFaded = activeNode && !highlightNodes.has(node);
+
+            ctx.save();
+            
+            // Fade out cards that aren't connected to the active node
+            ctx.globalAlpha = isFaded ? 0.15 : 1; 
+
+            if (node.img && node.img.complete && node.img.naturalHeight !== 0) {
+                
+                // Keep the stunning shadows
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetX = 3;
+                ctx.shadowOffsetY = 6;
+
+                // If this is the specifically clicked node, give it an extra glowing aura!
+                if (node === activeNode) {
+                    ctx.shadowColor = '#4CAF50';
+                    ctx.shadowBlur = 25;
+                }
+
+                const imgAspect = node.img.naturalWidth / node.img.naturalHeight;
+                let drawWidth = baseSize * 2; 
+                let drawHeight = baseSize * 2;
+                
+                if (imgAspect > 1) { 
+                    drawHeight = drawWidth / imgAspect;
+                } else { 
+                    drawWidth = drawHeight * imgAspect;
+                }
+
+                ctx.drawImage(
+                    node.img, 
+                    node.x - (drawWidth / 2), 
+                    node.y - (drawHeight / 2), 
+                    drawWidth, 
+                    drawHeight
+                );
+
+            } else {
+                ctx.fillStyle = '#334155'; 
+                ctx.fillRect(node.x - baseSize, node.y - baseSize * 1.4, baseSize * 2, baseSize * 2.8);
+            }
+            
+            ctx.restore();
+        })
+        .nodePointerAreaPaint((node, color, ctx) => {
+            const baseSize = Math.max(20, Math.min(50, node.popularity / 3));
+            
+            // Create a clickable rectangle that roughly matches the card dimensions
+            const hitWidth = baseSize * 2.2;
+            const hitHeight = baseSize * 2.8; 
+            
+            ctx.fillStyle = color; // The engine passes a unique hidden color to track clicks
+            
+            // Draw the invisible clickable box perfectly over the image
+            ctx.fillRect(
+                node.x - (hitWidth / 2), 
+                node.y - (hitHeight / 2), 
+                hitWidth, 
+                hitHeight
+            );
+        })
+}
+
+// --- Sync Data Cruncher ---
+function buildSynergyData() {
+    const nodesMap = new Map();
+    const edgesMap = new Map();
+
+    for (const key in fullDatabase) {
+        const deck = fullDatabase[key];
+        if (!deck.cards || !Array.isArray(deck.cards)) continue;
+
+        const deckCards = deck.cards.map(c => c.replace(/^x\d+\s+/, '').trim().replaceAll('_', ' '));
+
+        deckCards.forEach(card => {
+            if (!nodesMap.has(card)) {
+                nodesMap.set(card, { id: card, popularity: 1 });
+            } else {
+                nodesMap.get(card).popularity += 1;
+            }
+        });
+
+        for (let i = 0; i < deckCards.length; i++) {
+            for (let j = i + 1; j < deckCards.length; j++) {
+                const pair = [deckCards[i], deckCards[j]].sort();
+                const edgeId = `${pair[0]}|||${pair[1]}`;
+
+                if (!edgesMap.has(edgeId)) {
+                    edgesMap.set(edgeId, { source: pair[0], target: pair[1], weight: 1 });
+                } else {
+                    edgesMap.get(edgeId).weight += 1;
+                }
+            }
+        }
+    }
+
+    const MIN_SYNERGY_WEIGHT = 10; 
+    const links = Array.from(edgesMap.values()).filter(e => e.weight >= MIN_SYNERGY_WEIGHT);
+    
+    const connectedNodes = new Set();
+    links.forEach(link => {
+        connectedNodes.add(link.source);
+        connectedNodes.add(link.target);
+    });
+    const nodes = Array.from(nodesMap.values()).filter(n => connectedNodes.has(n.id));
+
+    return { nodes, links };
 }
