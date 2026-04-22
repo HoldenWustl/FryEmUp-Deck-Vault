@@ -185,15 +185,38 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     color: var(--accent);
 }
 
+/* Update your header if it isn't already a flexbox */
+.deck-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Aligns date to the top */
+    gap: 15px; /* Adds breathing room between the title area and the date */
+}
+
+/* This new container holds the title and credit stacked vertically */
+.deck-title-group {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* CRITICAL: allows the text-overflow ellipsis to work on the credit */
+}
+
+.deck-credit {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 3px; /* Small space below the title */
+}
+
 .deck-date {
     color: var(--text-secondary);
     font-size: 0.8rem;
-    margin-bottom: 5px;
     font-style: italic;
     white-space: nowrap;
-    margin-left: 10px;
+    flex-shrink: 0; /* CRITICAL: absolutely prevents the date from getting squished by a long title/credit */
 }
-
 .card-list {
     margin: 0;
     padding-left: 20px;
@@ -1141,12 +1164,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     display: block;
 }
 
-/* Position the Visual Deck details tag exactly on the right side of the same line */
-.visual-deck-details {
-    position: absolute;
-    top: 0;
-    right: 0;
-}
+
 
 /* --- The Visual Deck Summary Button --- */
 .view-visual-btn {
@@ -1317,11 +1335,7 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     margin-bottom: 24px;
 }
 
-.visual-deck-details {
-    position: absolute;
-    top: 0;
-    right: 0;
-}
+
 /* --- Modal Title Styling --- */
 #modalDeckTitle {
     color: var(--accent, #00b4d8);
@@ -1388,7 +1402,10 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         gap: 8px; /* Slightly smaller gap on mobile */
     }
 }
-
+.deck-controls-wrapper{
+    display: flex;
+    justify-content: space-between;
+}
 .hl-card:hover {
     transform: translateY(-5px);
     background: #444 !important;
@@ -1805,3 +1822,33 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     opacity: 0; /* Keeps cards invisible until their delay finishes */
     animation: cardPopIn 0.25s ease-out forwards;
 }
+
+
+
+.credit-icon {
+    position: absolute;
+    /* Tuck it slightly closer to the corner to anchor it */
+    right: 10px;
+    bottom: 10px;
+    
+    /* Slightly smaller so it doesn't fight the list items */
+    width: 34px;
+    height: 34px;
+    object-fit: cover;
+    border-radius: 50%;
+    
+    /* 1. Seamless Borders: Use your theme variables */
+    /* The thick card-bg border makes it look perfectly cut-out/inset */
+    border: 2px solid var(--card-bg); 
+    /* The secondary text color creates a very subtle outer ring without glowing */
+    box-shadow: 0 0 0 1px var(--text-secondary), 
+                0 4px 6px rgba(0, 0, 0, 0.4);
+                
+    /* 2. Watermark Effect: Mute the image so it blends into the dark theme */
+    opacity: 0.55; 
+    filter: saturate(0.8); /* Takes the edge off overly bright colors */
+    
+    z-index: 10;
+    pointer-events: none;
+}
+

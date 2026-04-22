@@ -101,6 +101,7 @@ Promise.all([
 
     // KICK OFF THE ROUTER NOW THAT WE HAVE DATA!
     handleRouting(); 
+    renderSeeds(); // Initial render to show empty state
 })
 .catch(error => {
     loadingEl.textContent = `Error loading data: ${error.message}`;
@@ -223,47 +224,66 @@ function handleRouting() {
             });
             cardsHtml += '</ul>';
 
-            const dateStr = deckInfo.upload_date && deckInfo.upload_date !== "UNKNOWN_DATE"
-                ? deckInfo.upload_date
-                : "Unknown Date";
+           const dateStr = deckInfo.upload_date && deckInfo.upload_date !== "UNKNOWN_DATE"
+    ? deckInfo.upload_date
+    : "Unknown Date";
 
-            const videoId = getYouTubeId(deckInfo.youtube_url);
-            const thumbnailUrl = videoId
-                ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-                : '';
+const creditStr = deckInfo.credit || "Unknown";
 
-            cardEl.innerHTML = `
-                <div class="deck-header">
-                    <h3 class="deck-title">${deckInfo.name}</h3>
-                    <span class="deck-date">${dateStr}</span>
-                </div>
-               
-           <div class="deck-controls-wrapper">
-    
+const videoId = getYouTubeId(deckInfo.youtube_url);
+const thumbnailUrl = videoId
+    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    : '';
+
+const creditIconSrc = creditStr === "FryEmUp" ? "fryemup.jpg" : "discord.webp";
+
+// 1. Determine if we should show the video section
+const isFryVideo = creditStr === "FryEmUp" && deckInfo.youtube_url;
+
+// 2. Build the Video Dropdown HTML (only if it's Fry)
+const videoControlsHtml = isFryVideo ? `
     <details class="video-dropdown" 
              ontoggle="this.closest('.deck-card').querySelector('.video-preview').classList.toggle('hidden', !this.open)">
         <summary>View Video</summary>
-    </details>
-    
-    <details class="visual-deck-details">
-        <summary class="view-visual-btn" 
-                 data-title="${deckInfo.name}" 
-                 data-cards="${encodeURIComponent(JSON.stringify(deckInfo.cards))}">
-            View Visual Deck
-        </summary>
-    </details>
+    </details>` : '';
 
-</div>
+// 3. Build the Video Preview HTML (only if it's Fry)
+const videoPreviewHtml = isFryVideo ? `
+    <div class="video-preview hidden">
+        <a href="${deckInfo.youtube_url}" target="_blank" title="${deckInfo.youtube_title}">
+            <img src="${thumbnailUrl}" alt="Video Thumbnail" loading="lazy">
+            <div class="video-title-overlay">${deckInfo.youtube_title}</div>
+        </a>
+    </div>` : '';
 
-<div class="video-preview hidden">
-    <a href="${deckInfo.youtube_url}" target="_blank" title="${deckInfo.youtube_title}">
-        <img src="${thumbnailUrl}" alt="Video Thumbnail" loading="lazy">
-        <div class="video-title-overlay">${deckInfo.youtube_title}</div>
-    </a>
-</div>
+cardEl.innerHTML = `
+    <div class="deck-card-inner">
+        <div class="deck-header">
+            <div class="deck-title-group">
+                <h3 class="deck-title">${deckInfo.name}</h3>
+                <span class="deck-credit" title="${creditStr}">${creditStr}</span>
+            </div>
+            <span class="deck-date">${dateStr}</span>
+        </div>
+       
+        <div class="deck-controls-wrapper">
+            ${videoControlsHtml}
+            
+            <details class="visual-deck-details">
+                <summary class="view-visual-btn" 
+                         data-title="${deckInfo.name}" 
+                         data-cards="${encodeURIComponent(JSON.stringify(deckInfo.cards))}">
+                    View Visual Deck
+                </summary>
+            </details>
+        </div>
 
-                ${cardsHtml}
-            `;
+        ${videoPreviewHtml}
+        ${cardsHtml}
+
+        <img class="credit-icon" src="${creditIconSrc}" alt="${creditStr} icon">
+    </div>
+`;
             
             fragment.appendChild(cardEl);
         }
@@ -1306,7 +1326,7 @@ if (budgetToggle && superBudgetToggle) {
 }
 
 const getTotalCards = () => currentSeeds.reduce((sum, seed) => sum + seed.count, 0);
-renderSeeds(); // Initial render to show empty state
+
 
 // --- 1. Smart Autocomplete ---
 seedInput.addEventListener('input', function() {
@@ -1994,18 +2014,31 @@ function triggerAICoPilot() {
     const chatFeed = document.getElementById('aiChatFeed');
     if (!chatFeed) return;
 
-    if (currentSeeds.length === 0) {
-        chatFeed.innerHTML = `<div class="ai-message system">Heey I'm Craaaazy Dave! I'm the best at creating amazing PvZ Heroes decks! Enter a card to get started.</div>`;
-        return;
-    }
+   if (currentSeeds.length === 0) {
+    // Get an array of all card names from the database
+    const cardNames = Object.keys(cardDatabase);
+    
+    // Pick a random name from that array
+    const randomCard = cardNames[Math.floor(Math.random() * cardNames.length)].replaceAll('_', ' ');
+
+    chatFeed.innerHTML = `
+        <div class="ai-message system">
+            Heey I'm Craaaazy Dave! I'm the best at creating amazing PvZ Heroes decks! 
+            Enter a card to get started. Maybe <strong>${randomCard}</strong>?
+        </div>
+    `;
+    return;
+}
 
     if (getTotalCards() >= 40) {
         const closestDeck = getClosestDeckMatch();
         let baseHtml = "";
 
-        if (!closestDeck) {
-            baseHtml = `<div class="ai-message system">Your deck is complete! I could not find a close match in the deck database.</div>`;
-        } else {
+       if (!closestDeck) {
+        baseHtml = `<div class="ai-message system">Your deck is complete! I could not find a close match in the deck database.</div>`;
+    } else {
+        // Check if the youtube_url exists and is not an empty string
+        if (closestDeck.youtube_url) {
             baseHtml = `
                 <div class="ai-message system">
                     Your deck is complete! Your deck is closest to 
@@ -2017,7 +2050,18 @@ function triggerAICoPilot() {
                     </div>
                 </div>
             `;
+        } else {
+            // Fallback for no URL: just text, no link, no underline
+            baseHtml = `
+                <div class="ai-message system">
+                    Your deck is complete! Your deck is closest to 
+                    <span style="font-weight: bold; color: var(--accent, #4CAF50);">
+                        ${closestDeck.name}
+                    </span>.
+                </div>
+            `;
         }
+    }
 
         // --- FIXED: Evaluate ALL possible swaps to find the highest net synergy gain ---
         initSynergyMatrix();
