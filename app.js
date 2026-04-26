@@ -2754,8 +2754,10 @@ function initSynergyMatrix() {
     deckTimestamps.sort((a, b) => a - b);
     const totalDecks = deckTimestamps.length;
     
-    // Split point for "Historical" vs "Recent" era
-    const threshold50 = deckTimestamps[Math.floor(totalDecks * 0.50)];
+    // Split point for "Historical" vs "Recent" era 
+    // Set to 94% to isolate the most recent 6% of decks
+    const thresholdIndex = Math.floor(totalDecks * 0.94);
+    const recentThreshold = deckTimestamps[thresholdIndex];
 
     // ==========================================
     // PASS 1: Calculate Card Momentum (Trending)
@@ -2768,7 +2770,7 @@ function initSynergyMatrix() {
     decks.forEach(deck => {
         const time = deck.upload_date ? new Date(deck.upload_date).getTime() : 0;
         const validTime = isNaN(time) ? 0 : time;
-        const isNewEra = validTime >= threshold50;
+        const isNewEra = validTime >= recentThreshold;
 
         if (isNewEra) newDeckCount++;
         else oldDeckCount++;
