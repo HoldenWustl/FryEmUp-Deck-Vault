@@ -1894,3 +1894,32 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 .extreme-cost {
     margin-top: 8px;
 }
+.analyze-deck-btn {
+    display: inline-block;
+    width: fit-content;
+    margin-bottom: 20px;
+    padding: 8px 24px;
+    background-color: var(--card-bg);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 20px; /* Gives it a nice pill shape */
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.analyze-deck-btn:hover {
+    background-color: var(--accent);
+    color: var(--text-primary);
+    box-shadow: 0 0 12px rgba(0, 180, 216, 0.4); /* Glows with your accent color */
+    transform: translateY(-1px);
+}
+
+.analyze-deck-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}

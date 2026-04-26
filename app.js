@@ -1911,6 +1911,7 @@ function updateDeckStats() {
 
     let totalCards = 0;
     let totalCost = 0;
+    let totalSparks = 0; // NEW: Track total spark value
     let curve = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, "6+": 0 };
     
     let totalConnection = 0;
@@ -1922,6 +1923,18 @@ function updateDeckStats() {
         const cost = parseInt(seedA.cost) || 1; 
         totalCost += (cost * seedA.count);
 
+        // --- NEW: Calculate Sparks based on Rarity ---
+        const cardData = cardDatabase[seedA.name] || {};
+        const rarity = cardData.Rarity || "Common";
+        let sparks = 0;
+        
+        if (rarity === "Uncommon") sparks = 50;
+        else if (rarity === "Rare") sparks = 250;
+        else if (rarity === "Super-Rare" || rarity === "Event") sparks = 1000;
+        else if (rarity === "Legendary") sparks = 4000;
+        
+        totalSparks += (sparks * seedA.count);
+
         // Populate Curve
         if (cost <= 1) curve[1] += seedA.count;
         else if (cost === 2) curve[2] += seedA.count;
@@ -1930,7 +1943,7 @@ function updateDeckStats() {
         else if (cost === 5) curve[5] += seedA.count;
         else curve["6+"] += seedA.count;
 
-        // --- NEW: COSINE SIMILARITY (True Exclusive Synergy) ---
+        // COSINE SIMILARITY (True Exclusive Synergy)
         let cardBestConnection = 0;
         const freqA = cardFrequencies[seedA.name] || 1;
 
@@ -1941,9 +1954,6 @@ function updateDeckStats() {
                 
                 const freqB = cardFrequencies[seedB.name] || 1;
                 
-                // Cosine Similarity Formula: coOccurrences / sqrt(freqA * freqB)
-                // This severely penalizes cards that are just "generic good stuff" 
-                // and heavily rewards strict combos.
                 const cosineSimilarity = coOccurrences / Math.sqrt(freqA * freqB);
                 
                 if (cosineSimilarity > cardBestConnection) {
@@ -1959,11 +1969,8 @@ function updateDeckStats() {
     const chart = document.getElementById('manaCurveChart');
     const maxCurveVal = Math.max(...Object.values(curve), 1); 
     
-    // Extract the counts in order
     const counts = [curve[1], curve[2], curve[3], curve[4], curve[5], curve["6+"]];
     
-    // Dynamically grab the exact pixel width of the container to prevent stretching!
-    // (We provide a fallback of 300 just in case it can't read the width yet)
     const width = chart.clientWidth > 0 ? chart.clientWidth : 300; 
     const height = 40;
     const xStep = width / (counts.length - 1);
@@ -1980,7 +1987,6 @@ function updateDeckStats() {
     
     pathD += `L ${width},${height} Z`; 
     
-    // Inject the inline SVG with the exact width so nothing gets distorted
     chart.innerHTML = `
         <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: 100%; overflow: visible; display: block;">
             <defs>
@@ -2009,42 +2015,71 @@ function updateDeckStats() {
     document.getElementById('deckSpeedLabel').innerText = speedLabel;
     document.getElementById('speedPointer').style.left = `calc(${leftPercent}% - 2px)`;
 
+    // --- NEW 3.5. Render Cost Score (Budget to P2W Slider) ---
+    const avgSparks = totalCards > 0 ? totalSparks / totalCards : 0;
+    let costLabel = "Budget";
+    let costColor = "#4CAF50";
+    let costPercent = 0;
+
+    // Distribute nicely across the slider based on average spark cost per card
+    if (avgSparks <= 250) { 
+        costLabel = "Budget"; 
+        costColor = "#4CAF50"; // Green
+        costPercent = (avgSparks / 250) * 25; 
+    } 
+    else if (avgSparks <= 600) { 
+        costLabel = "Moderate"; 
+        costColor = "#ffb300"; // Yellow
+        costPercent = 25 + ((avgSparks - 250) / 350) * 25; 
+    } 
+    else if (avgSparks <= 1400) { 
+        costLabel = "Expensive"; 
+        costColor = "orange"; // Matches the Red in your gradient
+        // Fixed: 1400 - 600 = 800
+        costPercent = 50 + ((avgSparks - 600) / 800) * 25; 
+    } 
+    else { 
+        costLabel = "P2W"; 
+        costColor = "#e91e63"; // Pink
+        // Hits 100% at 4000 sparks (All Legendary deck)
+        costPercent = 75 + (Math.min((avgSparks - 1400) / 2600, 1) * 25); 
+    }
+
+    const costLabelEl = document.getElementById('deckCostLabel');
+    costLabelEl.innerText = costLabel;
+    costLabelEl.style.color = costColor;
+    document.getElementById('costPointer').style.left = `calc(${costPercent}% - 2px)`;
+
+
     // 4. Render True Synergy Score
     let synergyScore = 0;
     if (totalCards > 0 && currentSeeds.length > 1) {
         let rawAvg = totalConnection / totalCards;
-        
         synergyScore = Math.min(Math.round(rawAvg*100), 100);
         
-        // Dampen the score slightly if the deck is super tiny (less than 6 cards)
         if (totalCards < 6) {
             synergyScore = Math.round(synergyScore * (totalCards / 6));
         }
-
     } else if (totalCards === 1) {
         synergyScore = 5; 
     }
-
-    // Optional: Remove the "minimum 10 score" safety net so bad decks actually show 0-5%.
-    // if (currentSeeds.length > 3 && synergyScore < 10) synergyScore = 10;
 
     document.getElementById('synergyPercent').innerText = `${synergyScore}%`;
     const fillBar = document.getElementById('synergyFill');
     fillBar.style.width = `${synergyScore}%`;
     
-   // Dynamic color shifting based on harsh Cosine grading
     if (synergyScore >= 85) {
-        fillBar.style.background = "#e91e63"; // Pink/Mythic (Excellent)
+        fillBar.style.background = "#e91e63"; 
     } else if (synergyScore >= 70) {
-        fillBar.style.background = "#4CAF50"; // Green (Good)
+        fillBar.style.background = "#4CAF50"; 
     } else if (synergyScore >= 50) {
-        fillBar.style.background = "#ffb300"; // Yellow (Mid/Okay - 50s and 60s)
+        fillBar.style.background = "#ffb300"; 
     } else {
-        fillBar.style.background = "#ff4b4b"; // Red (Bad/Scattered - under 50)
+        fillBar.style.background = "#ff4b4b"; 
     }
 
 
-   // --- SMART CURVE ANALYSIS (Weighted Archetype Envelope) ---
+    // 5. SMART CURVE ANALYSIS (Weighted Archetype Envelope)
     if (totalCards >= 10 && typeof fullDatabase !== 'undefined' && typeof cardDatabase !== 'undefined') {
         
         const userShape = [
@@ -2058,7 +2093,6 @@ function updateDeckStats() {
 
         let dbComparisons = [];
 
-        // 1. Calculate Overlap
         for (const deckKey in fullDatabase) {
             const dbDeck = fullDatabase[deckKey];
             let overlapScore = 0;
@@ -2091,7 +2125,6 @@ function updateDeckStats() {
                 else dbCurve["6+"] += count;
             });
 
-            // Require at least a baseline overlap to even be considered a "similar deck"
             if (dbTotalCards > 0 && overlapScore >= 6) {
                 dbComparisons.push({
                     name: dbDeck.name,
@@ -2105,7 +2138,6 @@ function updateDeckStats() {
             }
         }
 
-       // 2. Sort to find the absolute best match first
         dbComparisons.sort((a, b) => b.overlap - a.overlap);
         
         let closestDecks = [];
@@ -2119,7 +2151,6 @@ function updateDeckStats() {
             let totalWeight = 0;
             closestDecks.forEach(d => totalWeight += d.overlap);
 
-            // 3. Calculate WEIGHTED Ideal Curve
             let idealShape = [0, 0, 0, 0, 0, 0];
             closestDecks.forEach(deck => {
                 const weight = deck.overlap / totalWeight; 
@@ -2128,7 +2159,6 @@ function updateDeckStats() {
                 }
             });
 
-            // 4. Calculate Penalty using a Tolerance Envelope
             const tolerance = 0.05; 
             let totalPenalty = 0;
 
@@ -2139,10 +2169,7 @@ function updateDeckStats() {
                 }
             }
             
-           // Convert penalty to a readable percentage
             let deviationPercent = (totalPenalty / 6) * 100;
-            
-            // Convert deviation into a 0-100 score for the bar 
             let healthScore = Math.max(0, 100 - (deviationPercent * 10)); 
 
             const healthLabelEl = document.getElementById('curveHealthLabel');
@@ -2150,7 +2177,6 @@ function updateDeckStats() {
 
             healthFillEl.style.width = `${healthScore}%`;
 
-            // Apply thresholds for Colors & Labels
             if (deviationPercent <= 2.5) {
                 healthLabelEl.innerText = "Excellent";
                 healthLabelEl.style.color = "#4CAF50"; 
@@ -2166,16 +2192,14 @@ function updateDeckStats() {
             }
 
         } else {
-            // Failsafe if the deck has 10+ cards but is completely unique
             document.getElementById('curveHealthLabel').innerText = "Unique";
             document.getElementById('curveHealthLabel').style.color = "#888";
             document.getElementById('curveHealthFill').style.width = "0%";
             document.getElementById('curveHealthFill').style.backgroundColor = "transparent";
         }
     } else {
-        // NEW: Failsafe to reset the UI if there are fewer than 10 cards
         document.getElementById('curveHealthLabel').innerText = "...";
-        document.getElementById('curveHealthLabel').style.color = "#4CAF50"; // Reset to default green text
+        document.getElementById('curveHealthLabel').style.color = "#4CAF50"; 
         document.getElementById('curveHealthFill').style.width = "0%";
         document.getElementById('curveHealthFill').style.backgroundColor = "#4CAF50";
     }
@@ -2189,7 +2213,6 @@ document.getElementById('shareDeckBtn').addEventListener('click', function() {
         return card.count === 4 ? cardIndex : `${cardIndex}.${card.count}`;
     }).join('-'); // Use a HYPHEN to separate cards (100% URL safe!)
     
-    // NO MORE btoa() OR encodeURIComponent() needed!
     const shareUrl = `${window.location.origin}${window.location.pathname}?deck=${minimalDeckString}#crafter`;
     
     navigator.clipboard.writeText(shareUrl);
@@ -2205,7 +2228,8 @@ document.getElementById('shareDeckBtn').addEventListener('click', function() {
 });
 window.addEventListener('DOMContentLoaded', () => {
     const deckCode = new URLSearchParams(window.location.search).get('deck');
-    if (!deckCode) return;
+    const isCrafterHash = window.location.hash === '#crafter';
+    if (!deckCode || !isCrafterHash) return;
 
     let attempts = 0;
     const dataWatcher = setInterval(() => {
@@ -3383,21 +3407,26 @@ function openVisualModal(title, cardsArray) {
     modalTitle.textContent = title;
     modalGrid.innerHTML = ''; // Clear previous deck
 
+    // We will populate this array so the encoder can read it
+    const deckToAnalyze = [];
+
     // Loop directly through the strings in your array
     cardsArray.forEach(cardString => {
-        // Regex magic: It looks for "x" followed by numbers, a space, then the name
         const match = cardString.trim().match(/^x(\d+)\s+(.+)$/i);
         
         let count = 1;
-        let rawName = cardString; // Fallback just in case
+        let rawName = cardString;
 
         if (match) {
-            count = parseInt(match[1], 10); // Extracts the '2'
-            rawName = match[2];             // Extracts 'Hot Lava'
+            count = parseInt(match[1], 10);
+            rawName = match[2];
         }
 
         const displayName = rawName.replace(/_/g, ' ');
         const dbName = displayName.replace(/ /g, '_');
+
+        // FIXED: Push dbName (with underscores) instead of displayName
+        deckToAnalyze.push({ name: dbName, count: count });
 
         const cardDiv = document.createElement('div');
         cardDiv.className = 'visual-card';
@@ -3408,7 +3437,6 @@ function openVisualModal(title, cardsArray) {
         img.title = displayName;
         img.style.objectFit = 'contain';
         
-        // The magic fallback: if .png fails, instantly try .webp
         img.onerror = function() {
             this.onerror = null; 
             this.src = `card_images/${dbName}.webp`;
@@ -3422,6 +3450,36 @@ function openVisualModal(title, cardsArray) {
         cardDiv.appendChild(badge);
         modalGrid.appendChild(cardDiv);
     });
+
+    // --- Attach Analyze Logic to the Button ---
+    const analyzeBtn = document.getElementById('modalAnalyzeBtn');
+    
+    if (analyzeBtn) {
+        analyzeBtn.onclick = function() {
+            const cardDictionary = Object.keys(cardDatabase).sort();
+
+            const minimalDeckString = deckToAnalyze.map(card => {
+                // Find the index using the underscore name
+                const index = cardDictionary.indexOf(card.name);
+                
+                // Debugging logs just in case!
+                if (index === -1) {
+                    console.error(`🚨 Could not find card in dictionary: ${card.name}`);
+                }
+
+                const cardIndex = index.toString(36); 
+                
+                return card.count === 4 ? cardIndex : `${cardIndex}.${card.count}`;
+            }).join('-'); 
+            
+            const analyzeUrl = `${window.location.origin}${window.location.pathname}?deck=${minimalDeckString}#crafter`;
+            
+            console.log("Encoding complete. Target URL:", analyzeUrl);
+            
+            // Navigate the user to the encoded URL!
+            window.location.href = analyzeUrl; 
+        };
+    }
 
     // Show the modal
     modal.classList.remove('hidden');
