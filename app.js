@@ -728,70 +728,135 @@ if (document.getElementById('mostP2wDeck') && mostExpensiveDeck && leastExpensiv
         const gridColor = '#30363d';
         const textColor = '#8b949e';
         const standardColors = ['#ff7b72', '#79c0ff', '#d2a8ff', '#a5d6ff', '#ffa657', '#3fb950', '#f85149', '#8957e5', '#2f81f7', '#d4ed31'];
+       // --- 1. SET UP THE PAST BASELINE ---
+const dropCount = Math.min(100, Math.floor(totalDecks * 0.5)); 
+const safeDropCount = Math.max(1, dropCount); 
+const pastDecks = allDecks.slice(safeDropCount);
 
-        // --- CHART 1: Total Copies ---
-        const ctx1 = document.getElementById('topCardsChart').getContext('2d');
-        charts.topCards = new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: topCopiedSliced.map(i => i[0]),
-                datasets: [{ label: 'Total Copies', data: topCopiedSliced.map(i => i[1]), backgroundColor: '#238636', borderRadius: 4, hoverBackgroundColor: '#2ea043' }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-                scales: { x: { grid: { color: gridColor }, ticks: { color: textColor } }, y: { ticks: { color: '#c9d1d9' }, grid: { display: false } } },
-                plugins: { legend: { display: false }, tooltip: { callbacks: { footer: () => '👉 Click to search for this card' } } },
-                onClick: (e, activeElements) => {
-                   if (activeElements.length > 0) {
-    const clickedCard = charts.topCards.data.labels[activeElements[0].index];
+// --- 2. DYNAMIC RANKING FUNCTIONS ---
+// Helper function to extract a sorted array of card names, WITH filtering logic included
+function getRankedCards(deckArray, filterValue = 'all') {
+    const counts = {};
     
-    // 1. Trigger the router
-    window.location.hash = '#'; 
+    deckArray.forEach(deck => {
+        deck.cards.forEach(cardString => {
+            const match = cardString.match(/^x(\d+)\s+(.+)$/);
+            
+            if (match) {
+                const count = parseInt(match[1], 10);
+                const cardName = match[2].replace(/_/g, ' '); 
+                
+                // --- Apply the filter check ---
+                let keep = true;
+                if (filterValue !== 'all') {
+                    const dbKey = cardName.replace(/ /g, '_');
+                    const info = cardDatabase[dbKey] || {}; 
+                    
+                    const typeStr = info.Type ? info.Type.toLowerCase() : "";
+                    const isTrick = typeStr.includes("trick");
+                    const isEnv = typeStr.includes("environment");
+                    const isMinion = info.Type && !isTrick && !isEnv;
+                    const cost = parseInt(info.Cost, 10) || 0;
 
-    // 2. Wait exactly one render frame for the DOM to update
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.value = clickedCard;
-                searchInput.dispatchEvent(new Event('input'));
+                    keep = false;
+                    if (filterValue === "minion" && isMinion) keep = true;
+                    else if (filterValue === "trick" && isTrick) keep = true;
+                    else if (filterValue === "environment" && isEnv) keep = true;
+                    else if (filterValue === "wincon" && cost >= 5) keep = true;
+                }
+
+                if (keep) {
+                    counts[cardName] = (counts[cardName] || 0) + count;
+                }
             }
         });
     });
+    
+    // Sort by total copies (highest first) and return just an array of the names
+    return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(entry => entry[0]); 
 }
-                },
-                onHover: (e, activeElements) => { e.native.target.style.cursor = activeElements.length ? 'pointer' : 'default'; }
+
+// Function to generate the dictionary of text arrows based on a specific category
+function generateRankChanges(filterValue) {
+    const currentList = getRankedCards(allDecks, filterValue);
+    const pastList = getRankedCards(pastDecks, filterValue);
+    
+    const changes = {};
+    currentList.forEach((card, currentIndex) => {
+        const pastIndex = pastList.indexOf(card);
+        
+        if (pastIndex === -1) {
+            changes[card] = '  (NEW)'; 
+        } else {
+            const change = pastIndex - currentIndex; 
+            if (change > 0) changes[card] = `  (+${change} ▲)`; 
+            else if (change < 0) changes[card] = `  (-${Math.abs(change)} ▼)`; 
+            else changes[card] = `  (--)`; 
+        }
+    });
+    return changes;
+}
+
+// Initialize the global rankings for the default 'all' view when page loads
+let currentRankChanges = generateRankChanges('all');
+
+
+// --- 3. CHART 1: Total Copies ---
+const ctx1 = document.getElementById('topCardsChart').getContext('2d');
+charts.topCards = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+        // Use currentRankChanges to map the initial labels
+        labels: topCopiedSliced.map(i => `${i[0]}${currentRankChanges[i[0]] || ''}`),
+        datasets: [{ label: 'Total Copies', data: topCopiedSliced.map(i => i[1]), backgroundColor: '#238636', borderRadius: 4, hoverBackgroundColor: '#2ea043' }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        scales: { x: { grid: { color: gridColor }, ticks: { color: textColor } }, y: { ticks: { color: '#c9d1d9' }, grid: { display: false } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { footer: () => '👉 Click to search for this card' } } },
+        onClick: (e, activeElements) => {
+            if (activeElements.length > 0) {
+                const clickedCard = charts.topCards.data.labels[activeElements[0].index];
+                
+                window.location.hash = '#'; 
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        const searchInput = document.getElementById('searchInput');
+                        if (searchInput) {
+                            const cleanCardName = clickedCard.split(/  \(/)[0];
+                            searchInput.value = cleanCardName;
+                            searchInput.dispatchEvent(new Event('input'));
+                        }
+                    });
+                });
             }
-        });
-       window.applyTopCardsFilter = function (filterValue) {
-    if (!charts.topCards) return; // Prevent crashes if chart isn't rendered yet
+        },
+        onHover: (e, activeElements) => { e.native.target.style.cursor = activeElements.length ? 'pointer' : 'default'; }
+    }
+});
+
+
+// --- 4. TOP CARDS FILTER LOGIC ---
+window.applyTopCardsFilter = function (filterValue) {
+    if (!charts.topCards) return; 
 
     let filteredArray = [];
 
-    // Using Object.entries makes pulling the name and count much cleaner
     Object.entries(cardCopies).forEach(([cardName, count]) => {
         if (count === 0) return;
 
-        // --- THE FIX ---
-        // Convert "Berry Blast" back to "Berry_Blast" to match the database keys
         const dbKey = cardName.replace(/ /g, '_');
-        
-        // Now it will actually find the card stats!
         const info = cardDatabase[dbKey] || {}; 
         
-        // Categorize safely
         const typeStr = info.Type ? info.Type.toLowerCase() : "";
         const isTrick = typeStr.includes("trick");
         const isEnv = typeStr.includes("environment");
-        
-        // If it has stats but isn't a trick or environment, it's a fighter/minion
-        // We ensure info.Type exists so we don't accidentally count broken lookups as minions
         const isMinion = info.Type && !isTrick && !isEnv;
-        
-        // Ensure cost is parsed safely as a number
         const cost = parseInt(info.Cost, 10) || 0;
 
-        // Check against the selected filter
         let keep = false;
         if (filterValue === "all") keep = true;
         else if (filterValue === "minion" && isMinion) keep = true;
@@ -808,17 +873,24 @@ if (document.getElementById('mostP2wDeck') && mostExpensiveDeck && leastExpensiv
     filteredArray.sort((a, b) => b[1] - a[1]);
     const newTopSliced = filteredArray.slice(0, 15);
 
-    // Update the chart's data
-    charts.topCards.data.labels = newTopSliced.map(i => i[0]);
+    // --- THE FIX: Recalculate rank changes for this specific category ---
+    currentRankChanges = generateRankChanges(filterValue);
+
+    charts.topCards.data.labels = newTopSliced.map(i => {
+        const cleanName = i[0]; 
+        // Use the freshly generated context-aware arrows
+        return `${cleanName}${currentRankChanges[cleanName] || ''}`;
+    });
+    
     charts.topCards.data.datasets[0].data = newTopSliced.map(i => i[1]);
 
     // Update Colors based on filter
-    let newColor = '#238636';       // Default Green
+    let newColor = '#238636';       
     let hoverColor = '#2ea043';
 
-    if (filterValue === 'trick') { newColor = '#8957e5'; hoverColor = '#a371f7'; } // Purple
-    else if (filterValue === 'environment') { newColor = '#58a6ff'; hoverColor = '#79c0ff'; } // Blue
-    else if (filterValue === 'wincon') { newColor = '#f85149'; hoverColor = '#ff7b72'; } // Red
+    if (filterValue === 'trick') { newColor = '#8957e5'; hoverColor = '#a371f7'; } 
+    else if (filterValue === 'environment') { newColor = '#58a6ff'; hoverColor = '#79c0ff'; } 
+    else if (filterValue === 'wincon') { newColor = '#f85149'; hoverColor = '#ff7b72'; } 
 
     charts.topCards.data.datasets[0].backgroundColor = newColor;
     charts.topCards.data.datasets[0].hoverBackgroundColor = hoverColor;
@@ -826,6 +898,7 @@ if (document.getElementById('mostP2wDeck') && mostExpensiveDeck && leastExpensiv
     // Redraw smoothly
     charts.topCards.update();
 };
+
 const currentTopCardsFilter = document.getElementById('topCardsFilter').value;
 if (currentTopCardsFilter !== 'all') {
     window.applyTopCardsFilter(currentTopCardsFilter);
@@ -2004,23 +2077,39 @@ window.addEventListener('DOMContentLoaded', () => {
     const dataWatcher = setInterval(() => {
         attempts++;
         
-        if (typeof cardDatabase !== 'undefined' && cardDatabase && Object.keys(cardDatabase).length > 0) {
+        // CHECK ALL REQUIRED DATA, NOT JUST cardDatabase
+        const isDatabaseReady = typeof cardDatabase !== 'undefined' && cardDatabase && Object.keys(cardDatabase).length > 0;
+        const isFullDatabaseReady = typeof fullDatabase !== 'undefined' && fullDatabase && Object.keys(fullDatabase).length > 0;
+        // Add checks for cardAverageCopies or comboDictionary if they load asynchronously too
+        
+        // Only proceed if ALL dependencies are locked and loaded
+        if (isDatabaseReady && isFullDatabaseReady) {
             clearInterval(dataWatcher);
             if (typeof initSynergyMatrix === 'function') initSynergyMatrix();
 
             try {
+                // ... [Rest of your URL parsing logic stays exactly the same]
                 const cardDictionary = Object.keys(cardDatabase).sort();
                 
                 // Set up validation trackers
                 let totalCards = 0;
                 let isDeckValid = true;
                 const parsedSeeds = [];
+                const seenCards = new Set(); // Tracks unique cards
                 
                 const pairs = deckCode.split('-');
                 
                 for (const pair of pairs) {
                     const [indexStr, countStr] = pair.split('.');
                     const cardIndex = parseInt(indexStr, 36); 
+                    
+                    // Rule 3: Reject if we have already seen this card
+                    if (seenCards.has(cardIndex)) {
+                        isDeckValid = false;
+                        break; // Stop parsing immediately
+                    }
+                    seenCards.add(cardIndex);
+
                     const cardName = cardDictionary[cardIndex];
                     const fullCardData = cardDatabase[cardName];
                     
@@ -2084,7 +2173,7 @@ function triggerAICoPilot() {
     const cardNames = Object.keys(cardDatabase);
     
     // Pick a random name from that array
-    const randomCard = cardNames[Math.floor(Math.random() * cardNames.length)].replaceAll('_', ' ');
+    const randomCard = cardNames[Math.floor(Math.random() * cardNames.length)].replace(/_/g, ' ');
 
     chatFeed.innerHTML = `
         <div class="ai-message system">
