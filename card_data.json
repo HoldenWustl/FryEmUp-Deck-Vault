@@ -4922,7 +4922,7 @@
     "Quarterly_Bonus": {
         "Name": "Quarterly_Bonus",
         "Class": "Brainy",
-        "Cost": 5,
+        "Cost": 4,
         "Strength": null,
         "Health": null,
         "Description": "Draw a card for each Zombie",
