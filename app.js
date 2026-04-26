@@ -2017,7 +2017,8 @@ function updateDeckStats() {
         // Use an exponent > 1 to crush random noise.
         // A random deck (rawAvg ~0.3) will now score roughly 20-25%.
         // A meta deck (rawAvg ~0.65) will scale up nicely to 85-95%.
-        synergyScore = Math.min(Math.round(Math.pow(rawAvg, 1.8) * 220), 100);
+        // synergyScore = Math.min(Math.round(Math.pow(rawAvg, 1.8) * 220), 100);
+        synergyScore = Math.min(Math.round(rawAvg*100), 100);
         
         // Dampen the score slightly if the deck is super tiny (less than 6 cards)
         if (totalCards < 6) {
