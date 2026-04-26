@@ -2753,20 +2753,64 @@ function initSynergyMatrix() {
     
     deckTimestamps.sort((a, b) => a - b);
     const totalDecks = deckTimestamps.length;
+    
+    // Split point for "Historical" vs "Recent" era
     const threshold50 = deckTimestamps[Math.floor(totalDecks * 0.50)];
-    const threshold05 = deckTimestamps[Math.floor(totalDecks * 0.94)];
+
+    // ==========================================
+    // PASS 1: Calculate Card Momentum (Trending)
+    // ==========================================
+    const oldFreq = {};
+    const newFreq = {};
+    let oldDeckCount = 0;
+    let newDeckCount = 0;
 
     decks.forEach(deck => {
-        let deckWeight = 0.2; 
         const time = deck.upload_date ? new Date(deck.upload_date).getTime() : 0;
         const validTime = isNaN(time) ? 0 : time;
+        const isNewEra = validTime >= threshold50;
 
-        if (validTime >= threshold05) {
-            deckWeight = 4.0; 
-        } else if (validTime >= threshold50) {
-            deckWeight = 1.0; 
-        }
+        if (isNewEra) newDeckCount++;
+        else oldDeckCount++;
 
+        // Get unique cards in this deck to track play rate
+        const uniqueCards = new Set();
+        deck.cards.forEach(c => {
+            const firstSpace = c.indexOf(' ');
+            const cardName = c.substring(firstSpace + 1).trim();
+            uniqueCards.add(cardName);
+        });
+
+        uniqueCards.forEach(cardName => {
+            if (isNewEra) {
+                newFreq[cardName] = (newFreq[cardName] || 0) + 1;
+            } else {
+                oldFreq[cardName] = (oldFreq[cardName] || 0) + 1;
+            }
+        });
+    });
+
+    const cardMomentum = {};
+    const allUniqueCards = new Set([...Object.keys(oldFreq), ...Object.keys(newFreq)]);
+
+    allUniqueCards.forEach(card => {
+        // Laplace smoothing (add 5 fake decks) prevents a card played 0 times in old
+        // and 1 time in new from mathematically getting an infinite growth multiplier.
+        const oldRate = ((oldFreq[card] || 0) + 5) / (oldDeckCount + 5);
+        const newRate = ((newFreq[card] || 0) + 5) / (newDeckCount + 5);
+        
+        let momentum = newRate / oldRate;
+        
+        // Clamp the momentum so it doesn't skew the AI too violently.
+        // A dying card is cut in half (0.5x), a surging card is heavily boosted (2.5x).
+        momentum = Math.max(0.5, Math.min(momentum, 2.5));
+        cardMomentum[card] = momentum;
+    });
+
+    // ==========================================
+    // PASS 2: Build Synergy Graph Using Momentum
+    // ==========================================
+    decks.forEach(deck => {
         const parsedCards = deck.cards.map(c => {
             const firstSpace = c.indexOf(' ');
             const countStr = c.substring(0, firstSpace).replace(/x/i, '');
@@ -2778,22 +2822,33 @@ function initSynergyMatrix() {
         const cleanCards = parsedCards.map(pc => pc.name);
 
         parsedCards.forEach(card => {
-            cardFrequencies[card.name] = (cardFrequencies[card.name] || 0) + deckWeight;
+            // Apply the card's individual meta momentum instead of an arbitrary deck weight
+            const momentum = cardMomentum[card.name] || 1.0;
+            
+            cardFrequencies[card.name] = (cardFrequencies[card.name] || 0) + momentum;
+            
             if (!cardAverageCopies[card.name]) {
                 cardAverageCopies[card.name] = { total: 0, appearances: 0 };
             }
-            cardAverageCopies[card.name].total += (card.count * deckWeight);
-            cardAverageCopies[card.name].appearances += deckWeight;
+            cardAverageCopies[card.name].total += (card.count * momentum);
+            cardAverageCopies[card.name].appearances += momentum;
         });
 
         for (let i = 0; i < cleanCards.length; i++) {
             const cardA = cleanCards[i];
+            const momentumA = cardMomentum[cardA] || 1.0;
+
             if (!synergyMatrix[cardA]) synergyMatrix[cardA] = {};
             
             for (let j = 0; j < cleanCards.length; j++) {
                 if (i === j) continue;
                 const cardB = cleanCards[j];
-                synergyMatrix[cardA][cardB] = (synergyMatrix[cardA][cardB] || 0) + deckWeight;
+                const momentumB = cardMomentum[cardB] || 1.0;
+                
+                // The synergy weight is amplified if BOTH cards are trending up in the meta!
+                const synergyWeight = momentumA * momentumB;
+                
+                synergyMatrix[cardA][cardB] = (synergyMatrix[cardA][cardB] || 0) + synergyWeight;
             }
         }
     });
