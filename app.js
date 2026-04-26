@@ -2163,14 +2163,29 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 100);
 });
 // --- 3. CONVERSATIONAL AI CO-PILOT ---
+// --- 3. CONVERSATIONAL AI CO-PILOT ---
 function triggerAICoPilot() {
     window.activeSwapTarget = null;
     const chatFeed = document.getElementById('aiChatFeed');
     if (!chatFeed) return;
 
-   if (currentSeeds.length === 0) {
-    // Get an array of all card names from the database
-    const cardNames = Object.keys(cardDatabase);
+    // --- 🚨 THE FIX: WAIT FOR ASYNC DATA ON MOBILE 🚨 ---
+    // Check if the statistical data files have finished downloading
+    const isFreqReady = typeof cardFrequencies !== 'undefined' && Object.keys(cardFrequencies || {}).length > 0;
+    const isAvgCopiesReady = typeof cardAverageCopies !== 'undefined' && Object.keys(cardAverageCopies || {}).length > 0;
+    
+    // If the data is empty (mobile is still downloading it), WAIT and try again.
+    if (!isFreqReady || !isAvgCopiesReady) {
+        chatFeed.innerHTML = `<div class="ai-message system"><em>Crazy Dave is looking at the meta data...</em></div>`;
+        setTimeout(triggerAICoPilot, 100); // Wait 100ms and run this function again
+        return; // STOP execution here until data arrives
+    }
+    // ----------------------------------------------------
+
+    // ... [The rest of your code continues normally below]
+    if (currentSeeds.length === 0) {
+        // Get an array of all card names from the database
+        const cardNames = Object.keys(cardDatabase);
     
     // Pick a random name from that array
     const randomCard = cardNames[Math.floor(Math.random() * cardNames.length)].replace(/_/g, ' ');
