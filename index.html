@@ -57,14 +57,14 @@
                                 <option value="latest_1000">1000 Decks</option>
                                 <option value="latest_500">500 Decks</option>
                                 <option value="latest_250">250 Decks</option>
-                                <option value="latest_50">50 Decks</option>
+                                <option value="latest_100">100 Decks</option>
                             </optgroup>
 
                             <optgroup label="Oldest Decks">
                                 <option value="oldest_1000">1000 Decks</option>
                                 <option value="oldest_500">500 Decks</option>
                                 <option value="oldest_250">250 Decks</option>
-                                <option value="oldest_50">50 Decks</option>
+                                <option value="oldest_100">100 Decks</option>
                             </optgroup>
                         </select>
                     </div>
@@ -365,10 +365,11 @@
     </div>
 </div>
 
-            <div style="display: flex; gap: 15px;">
+            <div style="display: flex; gap: 12px;">
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: var(--text-secondary); font-weight: bold; margin-bottom: 4px;">
-                        <span>Speed: <span id="deckSpeedLabel" style="color: #fff;">Midrange</span></span>
+                        <span>Speed</span>
+                        <span id="deckSpeedLabel" style="color: #fff;">Midrange</span>
                     </div>
                     <div style="width: 100%; height: 8px; background: linear-gradient(90deg, #ff4b4b, #ffb300, #4CAF50, #2196F3); border-radius: 4px; position: relative;">
                         <div id="speedPointer" style="position: absolute; top: -3px; left: 50%; width: 4px; height: 14px; background: #fff; border-radius: 2px; box-shadow: 0 0 4px #000; transition: left 0.3s ease;"></div>
@@ -377,11 +378,21 @@
 
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: var(--text-secondary); font-weight: bold; margin-bottom: 4px;">
-                        <span>Synergy Score</span>
+                        <span>Synergy</span>
                         <span id="synergyPercent" style="color: #ffb300;">0%</span>
                     </div>
                     <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
                         <div id="synergyFill" style="height: 100%; width: 0%; background: #ffb300; transition: width 0.4s ease;"></div>
+                    </div>
+                </div>
+
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: var(--text-secondary); font-weight: bold; margin-bottom: 4px;">
+                        <span>Curve</span>
+                        <span id="curveHealthLabel" style="color: #4CAF50;">...</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div id="curveHealthFill" style="height: 100%; width: 0%; background: #4CAF50; transition: width 0.4s ease, background-color 0.4s ease;"></div>
                     </div>
                 </div>
             </div>

@@ -2014,10 +2014,6 @@ function updateDeckStats() {
     if (totalCards > 0 && currentSeeds.length > 1) {
         let rawAvg = totalConnection / totalCards;
         
-        // Use an exponent > 1 to crush random noise.
-        // A random deck (rawAvg ~0.3) will now score roughly 20-25%.
-        // A meta deck (rawAvg ~0.65) will scale up nicely to 85-95%.
-        // synergyScore = Math.min(Math.round(Math.pow(rawAvg, 1.8) * 220), 100);
         synergyScore = Math.min(Math.round(rawAvg*100), 100);
         
         // Dampen the score slightly if the deck is super tiny (less than 6 cards)
@@ -2045,6 +2041,143 @@ function updateDeckStats() {
         fillBar.style.background = "#ffb300"; // Yellow (Mid/Okay - 50s and 60s)
     } else {
         fillBar.style.background = "#ff4b4b"; // Red (Bad/Scattered - under 50)
+    }
+
+
+   // --- SMART CURVE ANALYSIS (Weighted Archetype Envelope) ---
+    if (totalCards >= 10 && typeof fullDatabase !== 'undefined' && typeof cardDatabase !== 'undefined') {
+        
+        const userShape = [
+            curve[1] / totalCards, 
+            curve[2] / totalCards, 
+            curve[3] / totalCards, 
+            curve[4] / totalCards, 
+            curve[5] / totalCards, 
+            curve["6+"] / totalCards
+        ];
+
+        let dbComparisons = [];
+
+        // 1. Calculate Overlap
+        for (const deckKey in fullDatabase) {
+            const dbDeck = fullDatabase[deckKey];
+            let overlapScore = 0;
+            let dbTotalCards = 0;
+            let dbCurve = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, "6+": 0 };
+
+            dbDeck.cards.forEach(cardString => {
+                const parts = cardString.split(" ");
+                if (parts.length < 2) return;
+                
+                const count = parseInt(parts[0].replace('x', '')) || 0;
+                const rawName = parts.slice(1).join(" "); 
+                const cleanName = rawName.replace(/_/g, ' '); 
+
+                dbTotalCards += count;
+
+                const userSeed = currentSeeds.find(s => s.name === cleanName || s.name === rawName);
+                if (userSeed) {
+                    overlapScore += Math.min(count, userSeed.count);
+                }
+
+                const cardData = cardDatabase[cleanName] || cardDatabase[rawName];
+                const cost = cardData ? parseInt(cardData.Cost) : 1; 
+
+                if (cost <= 1) dbCurve[1] += count;
+                else if (cost === 2) dbCurve[2] += count;
+                else if (cost === 3) dbCurve[3] += count;
+                else if (cost === 4) dbCurve[4] += count;
+                else if (cost === 5) dbCurve[5] += count;
+                else dbCurve["6+"] += count;
+            });
+
+            // Require at least a baseline overlap to even be considered a "similar deck"
+            if (dbTotalCards > 0 && overlapScore >= 6) {
+                dbComparisons.push({
+                    name: dbDeck.name,
+                    overlap: overlapScore,
+                    shape: [
+                        dbCurve[1] / dbTotalCards, dbCurve[2] / dbTotalCards,
+                        dbCurve[3] / dbTotalCards, dbCurve[4] / dbTotalCards,
+                        dbCurve[5] / dbTotalCards, dbCurve["6+"] / dbTotalCards
+                    ]
+                });
+            }
+        }
+
+       // 2. Sort to find the absolute best match first
+        dbComparisons.sort((a, b) => b.overlap - a.overlap);
+        
+        let closestDecks = [];
+        if (dbComparisons.length > 0) {
+            const bestOverlap = dbComparisons[0].overlap;
+            const dynamicThreshold = bestOverlap * 0.85; 
+            closestDecks = dbComparisons.filter(d => d.overlap >= dynamicThreshold).slice(0, 10);
+        }
+
+        if (closestDecks.length > 0) {
+            let totalWeight = 0;
+            closestDecks.forEach(d => totalWeight += d.overlap);
+
+            // 3. Calculate WEIGHTED Ideal Curve
+            let idealShape = [0, 0, 0, 0, 0, 0];
+            closestDecks.forEach(deck => {
+                const weight = deck.overlap / totalWeight; 
+                for (let i = 0; i < 6; i++) {
+                    idealShape[i] += deck.shape[i] * weight;
+                }
+            });
+
+            // 4. Calculate Penalty using a Tolerance Envelope
+            const tolerance = 0.05; 
+            let totalPenalty = 0;
+
+            for (let i = 0; i < 6; i++) {
+                let diff = Math.abs(userShape[i] - idealShape[i]);
+                if (diff > tolerance) {
+                    totalPenalty += (diff - tolerance);
+                }
+            }
+            
+           // Convert penalty to a readable percentage
+            let deviationPercent = (totalPenalty / 6) * 100;
+            
+            // Convert deviation into a 0-100 score for the bar 
+            let healthScore = Math.max(0, 100 - (deviationPercent * 10)); 
+
+            const healthLabelEl = document.getElementById('curveHealthLabel');
+            const healthFillEl = document.getElementById('curveHealthFill');
+
+            healthFillEl.style.width = `${healthScore}%`;
+
+            // Apply thresholds for Colors & Labels
+            if (deviationPercent <= 2.5) {
+                healthLabelEl.innerText = "Excellent";
+                healthLabelEl.style.color = "#4CAF50"; 
+                healthFillEl.style.backgroundColor = "#4CAF50";
+            } else if (deviationPercent <= 4.0) {
+                healthLabelEl.innerText = "Playable"; 
+                healthLabelEl.style.color = "#ffb300"; 
+                healthFillEl.style.backgroundColor = "#ffb300";
+            } else {
+                healthLabelEl.innerText = "Awkward";
+                healthLabelEl.style.color = "#ff4b4b"; 
+                healthFillEl.style.backgroundColor = "#ff4b4b";
+            }
+
+        } else {
+            // Failsafe if the deck has 10+ cards but is completely unique
+            document.getElementById('curveHealthLabel').innerText = "Unique";
+            document.getElementById('curveHealthLabel').style.color = "#888";
+            document.getElementById('curveHealthFill').style.width = "0%";
+            document.getElementById('curveHealthFill').style.backgroundColor = "transparent";
+        }
+    } else {
+        // NEW: Failsafe to reset the UI if there are fewer than 10 cards
+        document.getElementById('curveHealthLabel').innerText = "...";
+        document.getElementById('curveHealthLabel').style.color = "#4CAF50"; // Reset to default green text
+        document.getElementById('curveHealthFill').style.width = "0%";
+        document.getElementById('curveHealthFill').style.backgroundColor = "#4CAF50";
     }
 }
 document.getElementById('shareDeckBtn').addEventListener('click', function() {
