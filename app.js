@@ -2754,7 +2754,7 @@ function initSynergyMatrix() {
     deckTimestamps.sort((a, b) => a - b);
     const totalDecks = deckTimestamps.length;
     const threshold50 = deckTimestamps[Math.floor(totalDecks * 0.50)];
-    const threshold05 = deckTimestamps[Math.floor(totalDecks * 0.95)];
+    const threshold05 = deckTimestamps[Math.floor(totalDecks * 0.94)];
 
     decks.forEach(deck => {
         let deckWeight = 0.2; 
