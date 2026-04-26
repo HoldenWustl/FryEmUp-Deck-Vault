@@ -3434,7 +3434,7 @@
     "Cone_Zone": {
         "Name": "Cone_Zone",
         "Class": "Hearty",
-        "Cost": 1,
+        "Cost": 2,
         "Strength": null,
         "Health": null,
         "Description": "Zombies here get +3 Health. ",
