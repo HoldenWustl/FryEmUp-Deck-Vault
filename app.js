@@ -3196,56 +3196,32 @@ if (downloadBtn) {
         btn.disabled = true;
 
         try {
-            // 1. Grab Title and Hero directly from the DOM so it perfectly matches the screen
-            const titleContainer = document.getElementById('generatedDeckTitle');
-            let mainTitleText = "My Deck";
-            let subTitleText = "";
-            
-            if (titleContainer) {
-                const divs = titleContainer.querySelectorAll('div');
-                if (divs.length >= 2) {
-                    mainTitleText = divs[0].innerText.replace(/"/g, ''); 
-                    subTitleText = divs[1].innerText;
-                } else if (titleContainer.innerText.trim() !== '') {
-                    mainTitleText = titleContainer.innerText;
-                }
-            }
-
-            // 2. Setup Canvas Grid Math
-            const padding = 40;
-            const cardBoxWidth = 100;
+            // 1. Setup Canvas Grid Math
+            const padding = 20;
+            const cardBoxWidth = 110;
             const cardBoxHeight = 140; 
-            const gap = 25;
-            const columns = 6;
+            const gap = 15;
+            const columns = 4; 
             const rows = Math.ceil(currentSeeds.length / columns);
             
+            // Added watermarkHeight to give the text room to breathe at the bottom
+            const watermarkHeight = 24; 
             const canvasWidth = padding * 2 + (columns * cardBoxWidth) + ((columns - 1) * gap); 
-            const headerHeight = 110;
-            const rowHeight = cardBoxHeight + 45; 
-            const watermarkHeight = 30;
+            const rowHeight = cardBoxHeight; 
             
-            const canvasHeight = padding + headerHeight + (rows * rowHeight) + watermarkHeight;
+            // Add watermarkHeight to the total canvas height
+            const canvasHeight = padding * 2 + (rows * rowHeight) + ((rows - 1) * gap) + watermarkHeight;
             
             const canvas = document.createElement('canvas');
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
             const ctx = canvas.getContext('2d');
 
-            // 3. Draw Background
-            ctx.fillStyle = '#12181b';
+            // 2. Draw Background
+            ctx.fillStyle = '#22262a'; 
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-            // 4. Draw Header Titles
-            ctx.textAlign = 'center';
-            ctx.fillStyle = '#00b4d8';
-            ctx.font = 'bold 36px sans-serif';
-            ctx.fillText(mainTitleText, canvasWidth / 2, padding + 35);
-            
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '18px sans-serif';
-            if (subTitleText) ctx.fillText(subTitleText, canvasWidth / 2, padding + 70);
-
-            // 5. SORT THE CARDS (Matches the UI layout)
+            // 3. SORT THE CARDS
             const sortedSeeds = [...currentSeeds].sort((a, b) => {
                 const costA = cardDatabase[a.name]?.Cost || 0;
                 const costB = cardDatabase[b.name]?.Cost || 0;
@@ -3253,7 +3229,7 @@ if (downloadBtn) {
                 return a.name.localeCompare(b.name);
             });
 
-            // Instantly load all sorted images into memory
+            // 4. Load Images
             const loadedImages = await Promise.all(sortedSeeds.map(seed => {
                 return new Promise((resolve) => {
                     const img = new Image();
@@ -3272,19 +3248,23 @@ if (downloadBtn) {
                 });
             }));
 
-            // 6. Draw the Cards and Labels
+            // 5. Draw the Cards and Badges
             loadedImages.forEach((item, index) => {
                 const col = index % columns;
                 const row = Math.floor(index / columns);
                 
                 const x = padding + (col * (cardBoxWidth + gap));
-                const y = padding + headerHeight + (row * rowHeight);
+                const y = padding + (row * (rowHeight + gap));
 
                 // Anti-Squish Logic
+                let drawWidth = cardBoxWidth;
+                let drawHeight = cardBoxHeight;
+                let dx = x;
+                let dy = y;
+
                 if (item.img) {
                     const imgAspect = item.img.width / item.img.height;
                     const boxAspect = cardBoxWidth / cardBoxHeight;
-                    let drawWidth, drawHeight;
 
                     if (imgAspect > boxAspect) {
                         drawWidth = cardBoxWidth;
@@ -3294,8 +3274,8 @@ if (downloadBtn) {
                         drawWidth = cardBoxHeight * imgAspect;
                     }
 
-                    const dx = x + (cardBoxWidth - drawWidth) / 2;
-                    const dy = y + (cardBoxHeight - drawHeight) / 2;
+                    dx = x + (cardBoxWidth - drawWidth) / 2;
+                    dy = y + (cardBoxHeight - drawHeight) / 2;
 
                     ctx.drawImage(item.img, dx, dy, drawWidth, drawHeight);
                 } else {
@@ -3303,21 +3283,38 @@ if (downloadBtn) {
                     ctx.fillRect(x, y, cardBoxWidth, cardBoxHeight);
                 }
 
+                // Overlay the Quantity Badge
+                const text = `x${item.seed.count}`;
+                ctx.font = 'bold 16px sans-serif';
+                const textWidth = ctx.measureText(text).width;
+                
+                const badgeWidth = textWidth + 12; 
+                const badgeHeight = 24;
+                const badgeX = dx - 4; 
+                const badgeY = dy + drawHeight - badgeHeight - 4; 
+
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4); 
+                ctx.fill();
+
                 ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 22px sans-serif';
-                ctx.fillText(`x${item.seed.count}`, x + (cardBoxWidth / 2), y + cardBoxHeight + 28);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, badgeX + (badgeWidth / 2), badgeY + (badgeHeight / 2) + 1); 
             });
 
-            // 7. Draw Watermark
+            // 6. Draw Watermark
             ctx.textAlign = 'right';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.font = 'bold 20px sans-serif';
-            ctx.fillText('Created at pvzhvault.com', canvasWidth - padding, canvasHeight - 20);
+            ctx.textBaseline = 'bottom';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; // Slightly transparent white
+            ctx.font = 'bold 16px sans-serif';
+            // Position it right-aligned, accounting for padding
+            ctx.fillText('pvzhvault.com', canvasWidth - padding, canvasHeight - 15);
 
-            // 8. Instantly Export & Download
+            // 7. Export
             const link = document.createElement('a');
-            const safeTitle = mainTitleText.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            link.download = `${safeTitle || 'deck'}.png`;
+            link.download = `deck_export.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
 
