@@ -2272,7 +2272,6 @@ function updateDeckStats() {
     let powerScore = 0;
     if (totalCards > 0 && typeof fullDatabase !== 'undefined') {
         let cardPopularity = {};
-        let maxPopularity = 0;
         
         // Step 1: Scan database to count TOTAL COPIES of every card in the meta
         for (const key in fullDatabase) {
@@ -2282,36 +2281,39 @@ function updateDeckStats() {
                 if (parts.length < 2) return;
                 
                 const cleanName = parts.slice(1).join(" ").replace(/_/g, ' ');
-                // Extract the number of copies (e.g., "x4" -> 4)
                 const copies = parseInt(parts[0].replace('x', '')) || 1; 
                 
                 cardPopularity[cleanName] = (cardPopularity[cleanName] || 0) + copies;
             });
         }
         
-        // Step 2: Create a sorted array of unique popularity counts to calculate percentiles
-const uniqueCounts = [...new Set(Object.values(cardPopularity))].sort((a, b) => a - b);
-const maxRankIndex = uniqueCounts.length - 1;
+        // Step 2: Establish the absolute maximum copies for scaling
+        const metaValues = Object.values(cardPopularity);
+        const maxMetaCopies = metaValues.length > 0 ? Math.max(...metaValues) : 0;
 
-// Step 3: Grade every single card slot in the user's deck
-if (maxRankIndex > 0) {
-    let totalPowerPoints = 0;
-    
-    currentSeeds.forEach(seed => {
-        let cleanName = seed.name.replace(/_/g, ' ');
-        let metaCopies = cardPopularity[cleanName] || 0;
-        
-        // Find where this card's popularity ranks compared to all others
-        let rankIndex = uniqueCounts.indexOf(metaCopies);
-        
-        // Convert that rank to a clean 0-100 percentile
-        let cardPowerPercent = (rankIndex / maxRankIndex) * 100;
-        
-        totalPowerPoints += (cardPowerPercent * seed.count);
-    });
-    
-    powerScore = Math.min(100, Math.round(totalPowerPoints / totalCards));
-}
+        // Step 3: Grade every single card slot using a Tunable Power Curve
+        if (maxMetaCopies > 0) {
+            let totalPowerPoints = 0;
+            
+            // THE TUNING DIAL: 
+            // Lower number = pushes scores UP (flatter variance)
+            // Higher number = pushes scores DOWN (steeper variance)
+            // 0.5 is Square Root. 0.3 to 0.4 is usually the sweet spot for card games.
+            const curveFactor = 1; 
+            
+            currentSeeds.forEach(seed => {
+                let cleanName = seed.name.replace(/_/g, ' ');
+                let metaCopies = cardPopularity[cleanName] || 0;
+                
+                // Calculate the raw ratio, then apply the smoothing exponent
+                let rawRatio = metaCopies / maxMetaCopies;
+                let cardPowerPercent = Math.pow(rawRatio, curveFactor) * 100;
+                
+                totalPowerPoints += (cardPowerPercent * seed.count);
+            });
+            
+            powerScore = Math.min(100, Math.round(totalPowerPoints*3 / totalCards));
+        }
     }
 
     const powerLabelEl = document.getElementById('powerLabel');
