@@ -2064,19 +2064,28 @@ function updateDeckStats() {
         synergyScore = 5; 
     }
 
-    document.getElementById('synergyPercent').innerText = `${synergyScore}%`;
+    const percentTextEl = document.getElementById('synergyPercent');
     const fillBar = document.getElementById('synergyFill');
+
+    percentTextEl.innerText = `${synergyScore}%`;
     fillBar.style.width = `${synergyScore}%`;
     
+    // Determine the color based on the score
+    // Determine the color based on the score
+    let synergyColor;
     if (synergyScore >= 85) {
-        fillBar.style.background = "#e91e63"; 
+        synergyColor = "#00E5FF"; // Electric Cyan (S-Tier)
     } else if (synergyScore >= 70) {
-        fillBar.style.background = "#4CAF50"; 
+        synergyColor = "#4CAF50"; // Green (Good)
     } else if (synergyScore >= 50) {
-        fillBar.style.background = "#ffb300"; 
+        synergyColor = "#ffb300"; // Yellow (Average)
     } else {
-        fillBar.style.background = "#ff4b4b"; 
+        synergyColor = "#ff4b4b"; // Red (Poor)
     }
+
+    // Apply the color to BOTH the text and the progress bar
+    fillBar.style.background = synergyColor;
+    percentTextEl.style.color = synergyColor;
 
 
     // 5. SMART CURVE ANALYSIS (Weighted Archetype Envelope)
@@ -2145,7 +2154,15 @@ function updateDeckStats() {
             const bestOverlap = dbComparisons[0].overlap;
             const dynamicThreshold = bestOverlap * 0.85; 
             closestDecks = dbComparisons.filter(d => d.overlap >= dynamicThreshold).slice(0, 10);
+
+            // FORCE MINIMUM 2 DECKS
+            // If the 85% threshold was too strict and left us with only 1 (or 0) decks,
+            // but the database found at least 2 overlapping decks overall, grab the top 2.
+            if (closestDecks.length < 4 && dbComparisons.length >= 4) {
+                closestDecks = dbComparisons.slice(0, 4);
+            }
         }
+        console.log("Closest Decks for Curve Analysis:", closestDecks);
 
         if (closestDecks.length > 0) {
             let totalWeight = 0;
@@ -2177,15 +2194,21 @@ function updateDeckStats() {
 
             healthFillEl.style.width = `${healthScore}%`;
 
-            if (deviationPercent <= 2.5) {
+            if (deviationPercent <= 2.0) {
                 healthLabelEl.innerText = "Excellent";
+                healthLabelEl.style.color = "#00E5FF"; 
+                healthFillEl.style.backgroundColor = "#00E5FF";
+            } else if (deviationPercent <= 3.0) {
+                healthLabelEl.innerText = "Good"; 
                 healthLabelEl.style.color = "#4CAF50"; 
                 healthFillEl.style.backgroundColor = "#4CAF50";
-            } else if (deviationPercent <= 4.0) {
+            } 
+            else if (deviationPercent <= 5.0) {
                 healthLabelEl.innerText = "Playable"; 
                 healthLabelEl.style.color = "#ffb300"; 
                 healthFillEl.style.backgroundColor = "#ffb300";
-            } else {
+            }
+            else {
                 healthLabelEl.innerText = "Awkward";
                 healthLabelEl.style.color = "#ff4b4b"; 
                 healthFillEl.style.backgroundColor = "#ff4b4b";
@@ -2203,6 +2226,107 @@ function updateDeckStats() {
         document.getElementById('curveHealthFill').style.width = "0%";
         document.getElementById('curveHealthFill').style.backgroundColor = "#4CAF50";
     }
+
+    // ==========================================
+    // 5. CONSISTENCY SCORE
+    // ==========================================
+    let consistencyScore = 0;
+    if (totalCards > 0 && currentSeeds.length > 0) {
+        let totalConsistencyPoints = 0;
+
+        currentSeeds.forEach(seed => {
+            // Grade each card slot individually to penalize variance
+            if (seed.count === 1) {
+                totalConsistencyPoints += 0;     // Singletons ruin consistency
+            } else if (seed.count === 2) {
+                totalConsistencyPoints += 50;    // Decent
+            } else if (seed.count === 3) {
+                totalConsistencyPoints += 80;    // Great
+            } else if (seed.count >= 4) {
+                totalConsistencyPoints += 100;   // Perfect
+            }
+        });
+
+        // Average the graded points across the unique cards
+        consistencyScore = Math.round(totalConsistencyPoints / currentSeeds.length);
+    }
+
+    const consistencyPercentEl = document.getElementById('consistencyPercent');
+    const consistencyFillEl = document.getElementById('consistencyFill');
+    consistencyPercentEl.innerText = `${consistencyScore}%`;
+    consistencyFillEl.style.width = `${consistencyScore}%`;
+
+    let consistencyColor;
+    if (consistencyScore >= 85) consistencyColor = "#00E5FF"; // Cyan
+    else if (consistencyScore >= 70) consistencyColor = "#4CAF50"; // Green
+    else if (consistencyScore >= 50) consistencyColor = "#ffb300"; // Yellow
+    else consistencyColor = "#ff4b4b"; // Red
+
+    consistencyPercentEl.style.color = consistencyColor;
+    consistencyFillEl.style.backgroundColor = consistencyColor;
+
+
+    // ==========================================
+    // 6. POWER (META) SCORE
+    // ==========================================
+    let powerScore = 0;
+    if (totalCards > 0 && typeof fullDatabase !== 'undefined') {
+        let cardPopularity = {};
+        let maxPopularity = 0;
+        
+        // Step 1: Scan database to count TOTAL COPIES of every card in the meta
+        for (const key in fullDatabase) {
+            const dbDeck = fullDatabase[key];
+            dbDeck.cards.forEach(cardString => {
+                const parts = cardString.split(" ");
+                if (parts.length < 2) return;
+                
+                const cleanName = parts.slice(1).join(" ").replace(/_/g, ' ');
+                // Extract the number of copies (e.g., "x4" -> 4)
+                const copies = parseInt(parts[0].replace('x', '')) || 1; 
+                
+                cardPopularity[cleanName] = (cardPopularity[cleanName] || 0) + copies;
+            });
+        }
+        
+        // Step 2: Create a sorted array of unique popularity counts to calculate percentiles
+const uniqueCounts = [...new Set(Object.values(cardPopularity))].sort((a, b) => a - b);
+const maxRankIndex = uniqueCounts.length - 1;
+
+// Step 3: Grade every single card slot in the user's deck
+if (maxRankIndex > 0) {
+    let totalPowerPoints = 0;
+    
+    currentSeeds.forEach(seed => {
+        let cleanName = seed.name.replace(/_/g, ' ');
+        let metaCopies = cardPopularity[cleanName] || 0;
+        
+        // Find where this card's popularity ranks compared to all others
+        let rankIndex = uniqueCounts.indexOf(metaCopies);
+        
+        // Convert that rank to a clean 0-100 percentile
+        let cardPowerPercent = (rankIndex / maxRankIndex) * 100;
+        
+        totalPowerPoints += (cardPowerPercent * seed.count);
+    });
+    
+    powerScore = Math.min(100, Math.round(totalPowerPoints / totalCards));
+}
+    }
+
+    const powerLabelEl = document.getElementById('powerLabel');
+    const powerFillEl = document.getElementById('powerFill');
+    powerLabelEl.innerText = `${powerScore}%`;
+    powerFillEl.style.width = `${powerScore}%`;
+
+    let powerColor;
+    if (powerScore >= 85) powerColor = "#00E5FF"; // Cyan
+    else if (powerScore >= 70) powerColor = "#4CAF50"; // Green
+    else if (powerScore >= 50) powerColor = "#ffb300"; // Yellow
+    else powerColor = "#ff4b4b"; // Red
+
+    powerLabelEl.style.color = powerColor;
+    powerFillEl.style.backgroundColor = powerColor;
 }
 document.getElementById('shareDeckBtn').addEventListener('click', function() {
     const cardDictionary = Object.keys(cardDatabase).sort();
@@ -2458,10 +2582,6 @@ function triggerAICoPilot() {
                         <button class="add-rec-btn generate-btn" data-remove="${bestSwapIdea.removeCard}" data-add="${bestSwapIdea.addCard}" style="width: 100%; padding: 6px 0; font-size: 0.9em; font-weight: bold; margin: 0; margin-top: auto; border-radius: 6px; white-space: nowrap;">
                             Swap
                         </button>
-
-                        <div style="text-align: center; font-size: 0.85em; font-weight: bold; color: #4CAF50; margin-top: 6px; letter-spacing: 0.5px;">
-                            Better Synergy
-                        </div>
                     </div>
                 </div>
             `;

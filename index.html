@@ -349,58 +349,86 @@
         
        <div id="deckStatsHud" style="display: none; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);">
             
-    <div style="margin-bottom: 10px; background: rgba(255,255,255,0.02); border-radius: 6px; padding: 8px 10px 4px 10px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-size: 0.65em; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Mana Curve</span>
-            <div style="display: flex; gap: 8px; font-size: 0.6em; color: #666;">
-                <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6+</span>
-            </div>
-        </div>
-        
-        <div id="manaCurveChart" style="height: 30px; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+    <div onclick="const body = document.getElementById('deckStatsBody'); const icon = document.getElementById('statsToggleIcon'); if(body.style.display === 'none'){ body.style.display = 'block'; icon.innerText = '▼'; } else { body.style.display = 'none'; icon.innerText = '▶'; }" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding-bottom: 5px;">
+        <span style="font-size: 0.7em; color: #fff; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Deck Analytics</span>
+        <span id="statsToggleIcon" style="color: #aaa; font-size: 0.7em; transition: transform 0.2s;">▼</span>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+    <div id="deckStatsBody" style="display: block; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
         
-        <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
-            <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
-                <span style="color: #888; text-transform: uppercase;">Speed</span>
-                <span id="deckSpeedLabel" style="color: #fff; font-weight: bold;">Midrange</span>
+        <div style="margin-bottom: 10px; background: rgba(255,255,255,0.02); border-radius: 6px; padding: 8px 10px 4px 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 0.65em; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Mana Curve</span>
+                <div style="display: flex; gap: 8px; font-size: 0.6em; color: #666;">
+                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6+</span>
+                </div>
             </div>
-            <div style="width: 100%; height: 4px; background: linear-gradient(90deg, #ff4b4b, #ffb300, #4CAF50, #2196F3); border-radius: 2px; position: relative;">
-                <div id="speedPointer" style="position: absolute; top: -4px; left: 50%; width: 3px; height: 12px; background: #fff; border-radius: 1px; transition: left 0.3s ease;"></div>
-            </div>
+            <div id="manaCurveChart" style="height: 30px; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
         </div>
 
-        <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
-            <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
-                <span style="color: #888; text-transform: uppercase;">Synergy</span>
-                <span id="synergyPercent" style="color: #ffb300; font-weight: bold;">0%</span>
-            </div>
-            <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden;">
-                <div id="synergyFill" style="height: 100%; width: 0%; background: #ffb300; transition: width 0.4s ease;"></div>
-            </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            
+    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
+            <span style="color: #888; text-transform: uppercase;">Curve</span>
+            <span id="curveHealthLabel" style="color: #4CAF50; font-weight: bold;">...</span>
         </div>
+        <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden;">
+            <div id="curveHealthFill" style="height: 100%; width: 0%; background: #4CAF50; transition: width 0.4s ease;"></div>
+        </div>
+    </div>
 
-        <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
-            <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
-                <span style="color: #888; text-transform: uppercase;">Curve</span>
-                <span id="curveHealthLabel" style="color: #4CAF50; font-weight: bold;">...</span>
-            </div>
-            <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden;">
-                <div id="curveHealthFill" style="height: 100%; width: 0%; background: #4CAF50; transition: width 0.4s ease;"></div>
-            </div>
+    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
+            <span style="color: #888; text-transform: uppercase;">Speed</span>
+            <span id="deckSpeedLabel" style="color: #fff; font-weight: bold;">Midrange</span>
         </div>
+        <div style="width: 100%; height: 4px; background: linear-gradient(90deg, #ff4b4b, #ffb300, #4CAF50, #2196F3); border-radius: 2px; position: relative;">
+            <div id="speedPointer" style="position: absolute; top: -4px; left: 50%; width: 3px; height: 12px; background: #fff; border-radius: 1px; transition: left 0.3s ease;"></div>
+        </div>
+    </div>
 
-        <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
-            <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
-                <span style="color: #888; text-transform: uppercase;">Cost</span>
-                <span id="deckCostLabel" style="color: #4CAF50; font-weight: bold;">Budget</span>
-            </div>
-            <div style="width: 100%; height: 4px; background: linear-gradient(90deg, #4CAF50, #ffb300, #ff4b4b, #e91e63); border-radius: 2px; position: relative;">
-                <div id="costPointer" style="position: absolute; top: -4px; left: 0%; width: 3px; height: 12px; background: #fff; border-radius: 1px; transition: left 0.3s ease;"></div>
-            </div>
+    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
+            <span style="color: #888; text-transform: uppercase;">Consistency</span>
+            <span id="consistencyPercent" style="color: #2196F3; font-weight: bold;">0%</span>
         </div>
+        <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden;">
+            <div id="consistencyFill" style="height: 100%; width: 0%; background: #2196F3; transition: width 0.4s ease;"></div>
+        </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
+            <span style="color: #888; text-transform: uppercase;">Synergy</span>
+            <span id="synergyPercent" style="color: #ffb300; font-weight: bold;">0%</span>
+        </div>
+        <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden;">
+            <div id="synergyFill" style="height: 100%; width: 0%; background: #ffb300; transition: width 0.4s ease;"></div>
+        </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
+            <span style="color: #888; text-transform: uppercase;">Power</span>
+            <span id="powerLabel" style="color: #9c27b0; font-weight: bold;">0%</span>
+        </div>
+        <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden;">
+            <div id="powerFill" style="height: 100%; width: 0%; background: #9c27b0; transition: width 0.4s ease;"></div>
+        </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.65em; margin-bottom: 6px;">
+            <span style="color: #888; text-transform: uppercase;">Cost</span>
+            <span id="deckCostLabel" style="color: #4CAF50; font-weight: bold;">Budget</span>
+        </div>
+        <div style="width: 100%; height: 4px; background: linear-gradient(90deg, #4CAF50, #ffb300, #ff4b4b, #e91e63); border-radius: 2px; position: relative;">
+            <div id="costPointer" style="position: absolute; top: -4px; left: 0%; width: 3px; height: 12px; background: #fff; border-radius: 1px; transition: left 0.3s ease;"></div>
+        </div>
+    </div>
+
+</div>
     </div>
 </div>
         <div class="ai-chat-feed" id="aiChatFeed">
