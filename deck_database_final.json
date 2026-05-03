@@ -1,4 +1,25 @@
 {
+    "deck_-2": {
+        "name": "Fertilize Your Flowers",
+        "cards": [
+            "x4 Primal_Sunflower",
+            "x4 Sunflower",
+            "x4 Umbrella_Leaf",
+            "x4 Lily_of_the_Valley",
+            "x2 Twin_Sunflower",
+            "x4 Fertilizer",
+            "x4 Power_Flower",
+            "x2 Astrocado",
+            "x4 Briar_Rose",
+            "x2 Apotatosaurus",
+            "x2 Laser_Bean",
+            "x4 Espresso_Fiesta"
+        ],
+        "youtube_title": "Fertilizing Flowers is OP",
+        "youtube_url": "https://www.youtube.com/watch?v=E6z5h5e8tns",
+        "upload_date": "May 02, 2026",
+        "credit": "FryEmUp"
+    },
     "deck_-1": {
         "name": "Loco Ramp Mirror Nut",
         "cards": [
