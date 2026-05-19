@@ -2343,8 +2343,8 @@ function updateDeckStats() {
 // consistency contributes only a little here — its real role is the penalty below.
 const base = (curveNumeric * 0.35)
            + (synergyScore  * 0.35)
-           + (powerScore    * 0.20)
-           + (consistencyScore * 0.10);
+           + (powerScore    * 0.25)
+           + (consistencyScore * 0.05);
 
 // Consistency penalty: nothing if it's "good" (70+), but ramps up sharply below that.
 // Bad consistency genuinely breaks decks, so this needs teeth.
