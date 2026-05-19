@@ -1509,22 +1509,19 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .version-effect {
-    /* Create a gradient with the same color on the ends for seamless looping */
-    background: linear-gradient(to right, #00d2ff, #3a7bd5, #00d2ff);
+    background: linear-gradient(to right, #00d2ff, #4a90e2, #00d2ff);
     background-size: 200% auto;
-    
-    /* Clip the background to the text shape */
+
     color: transparent;
     -webkit-background-clip: text;
     background-clip: text;
-    
-    /* Animate the background moving across the text */
-    animation: shimmerText 3s linear infinite;
-    
-    /* Optional: make it pop a little more */
-    font-weight: 900;
-    font-style: italic;
+
+    font-weight: 800;
     margin-left: 4px;
+}
+
+.version-effect:hover {
+    animation: shimmerText 2.5s linear infinite;
 }
 /* Container for the whole view */
 .split-layout {
