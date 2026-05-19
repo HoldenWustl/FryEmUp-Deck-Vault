@@ -1,5 +1,5 @@
 {
-     "deck_-6": {
+    "deck_-6": {
         "name": "Muscle Lily",
         "cards": [
             "x4 Bonk_Choy",
@@ -61,7 +61,90 @@
         "upload_date": "May 14, 2026",
         "credit": "FryEmUp"
     },
-     "deck_-3": {
+    "deck_-7": {
+        "name": "tank tings",
+        "cards": [
+            "x4 Bungee_Plumber",
+            "x4 Disco-Naut",
+            "x4 Quickdraw_Con_Man",
+            "x3 Barrel_of_Barrels",
+            "x4 Dr._Spacetime",
+            "x3 Frosty_Mustache",
+            "x4 Quazard",
+            "x3 Gizzard_Lizard",
+            "x3 Laser_Base_Alpha",
+            "x4 Tankylosaurus",
+            "x4 Cryo-Yeti"
+        ],
+        "youtube_title": "",
+        "youtube_url": "",
+        "upload_date": "May 12, 2026",
+        "credit": "Crimpton"
+    },
+    "deck_36": {
+        "name": "Tetris",
+        "cards": [
+            "x4 Cheese_Cutter",
+            "x3 Dog_Walker",
+            "x2 Barrel_of_Barrels",
+            "x3 Botanist",
+            "x2 Hunting_Grounds",
+            "x3 Ice_Pirate",
+            "x4 Area_22",
+            "x4 Captain_Flameface",
+            "x4 Line_Dancing_Zombie",
+            "x4 Space_Cowboy",
+            "x4 Cryo-Yeti",
+            "x3 Cursed_Gargolith"
+        ],
+        "youtube_title": "",
+        "youtube_url": "",
+        "upload_date": "May 11, 2026",
+        "credit": "Durga, Xera"
+    },
+    "deck_74": {
+        "name": "Schmidt",
+        "cards": [
+            "x3 Bonk_Choy",
+            "x4 Clique_Peas",
+            "x4 Forget-Me-Nuts",
+            "x4 Sting_Bean",
+            "x3 Lily_of_the_Valley",
+            "x4 Pea_Patch",
+            "x4 Split_Pea",
+            "x3 Fertilizer",
+            "x4 Podfather",
+            "x1 Body-Gourd",
+            "x4 Gatling_Pea",
+            "x2 Espresso_Fiesta"
+        ],
+        "youtube_title": "",
+        "youtube_url": "",
+        "upload_date": "May 11, 2026",
+        "credit": "Xera, Durga"
+    },
+    "deck_-9": {
+        "name": "Lashroomgna",
+        "cards": [
+            "x4 Puff_Shroom",
+            "x4 Astro_Shroom",
+            "x3 Shroom_For_Two",
+            "x3 Sun_Shroom",
+            "x4 Berry_Blast",
+            "x4 Buff_Shroom",
+            "x3 Wild_Berry",
+            "x3 Cro-Magnolia",
+            "x3 Veloci-Radish_Packmate",
+            "x4 Astrocado",
+            "x3 Gloom-Shroom",
+            "x2 Cob_Cannon"
+        ],
+        "youtube_title": "",
+        "youtube_url": "",
+        "upload_date": "May 9, 2026",
+        "credit": "Pasta"
+    },
+    "deck_-3": {
         "name": "Starch BOOM",
         "cards": [
             "x4 Forget-Me-Nuts",
@@ -142,6 +225,27 @@
         "youtube_url": "https://www.youtube.com/watch?v=urSKRm-fnX0",
         "upload_date": "Apr 23, 2026",
         "credit": "FryEmUp"
+    },
+    "deck_-8": {
+        "name": "Stalkpox",
+        "cards": [
+            "x4 Lima_Pleurodon",
+            "x4 Sun_Shroom",
+            "x2 Grave_Mistake",
+            "x4 Sage_Sage",
+            "x4 Sow_Magic_Beans",
+            "x2 Water_Balloons",
+            "x4 2nd-Best_Taco_of_All_Time",
+            "x4 Cross-Pollination",
+            "x3 Ketchup_Mechanic",
+            "x4 Jelly_Bean",
+            "x4 Brainana",
+            "x1 Dark_Matter_Dragonfruit"
+        ],
+        "youtube_title": "",
+        "youtube_url": "",
+        "upload_date": "Apr 20, 2026",
+        "credit": "Boris, Xera"
     },
     "deck_1": {
         "name": "Patreon's Gargtuna",
@@ -869,27 +973,6 @@
         "youtube_url": "https://www.youtube.com/watch?v=lypnaQfvPF4",
         "upload_date": "Feb 26, 2026",
         "credit": "FryEmUp"
-    },
-    "deck_36": {
-        "name": "Tetris",
-        "cards": [
-            "x4 Cheese_Cutter",
-            "x3 Imposter",
-            "x3 Secret_Agent",
-            "x2 Barrel_of_Barrels",
-            "x3 Botanist",
-            "x2 Hunting_Grounds",
-            "x3 Ice_Pirate",
-            "x4 Area_22",
-            "x4 Captain_Flameface",
-            "x4 Line_Dancing_Zombie",
-            "x4 Space_Cowboy",
-            "x4 Cryo-Yeti"
-        ],
-        "youtube_title": "",
-        "youtube_url": "",
-        "upload_date": "Feb 26, 2026",
-        "credit": "Durga, Xera"
     },
     "deck_37": {
         "name": "Leafy Pineclone Molekale",
@@ -1663,27 +1746,6 @@
         "youtube_url": "https://www.youtube.com/watch?v=WkiNFaku1sE",
         "upload_date": "Jan 28, 2026",
         "credit": "FryEmUp"
-    },
-    "deck_74": {
-        "name": "Schmidt",
-        "cards": [
-            "x3 Bonk_Choy",
-            "x4 Clique_Peas",
-            "x4 Forget-Me-Nuts",
-            "x4 Sting_Bean",
-            "x3 Pea_Patch",
-            "x4 Split_Pea",
-            "x3 Fertilizer",
-            "x4 Podfather",
-            "x2 Blockbuster",
-            "x2 Plant_Food",
-            "x3 Body-Gourd",
-            "x4 Gatling_Pea"
-        ],
-        "youtube_title": "",
-        "youtube_url": "",
-        "upload_date": "Jan 28, 2026",
-        "credit": "Xera, Durga"
     },
     "deck_75": {
         "name": "Control and Win",
